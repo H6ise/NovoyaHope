@@ -1,0 +1,36 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using NovoyaHope.Models
+@using NovoyaHope.Models.DataModels
+
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+@if (SignInManager.IsSignedIn(User))
+{
+    // --- 1. Пользователь авторизован ---
+
+    // Получаем текущего пользователя для отображения email
+    var user = await UserManager.GetUserAsync(User);
+    var email = user?.Email ?? "Профиль";
+
+    <li class="nav-item">
+        <a class="nav-link text-dark" href="#" title="Управление">Привет, @email!</a>
+    </li>
+
+    <li class="nav-item">
+        <form id="logoutForm" class="form-inline" asp-controller="Account" asp-action="Logout" method="post">
+            <button type="submit" class="btn btn-link text-white nav-link btn-primary logout-link">Выход</button>
+        </form>
+    </li>
+}
+else
+{
+    // --- 2. Пользователь НЕ авторизован ---
+
+    <li class="nav-item">
+        <a class="nav-link btn-primary" asp-controller="Account" asp-action="Register">Регистрация</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Войти</a>
+    </li>
+}

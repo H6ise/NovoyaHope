@@ -1,0 +1,124 @@
+/* ====================================
+   1. ÑÁĞÎÑ È ÁÀÇÎÂÀß ÒÈÏÎÃĞÀÔÈÊÀ
+   ==================================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Roboto', 'Helvetica', Arial, sans-serif;
+    background-color: #f0f2f5;
+    color: #202124;
+    line-height: 1.5;
+}
+
+a {
+    color: #673ab7; /* Ôèîëåòîâûé àêöåíò */
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+    a:hover {
+        color: #5d31a5;
+    }
+
+/* ====================================
+   2. ËİÉÀÓÒ È ÍÀÂÈÃÀÖÈß
+   ==================================== */
+.container {
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
+    max-width: 1200px;
+}
+
+/* Âåğõíÿÿ øàïêà (Header) */
+.main-header {
+    background-color: #ffffff;
+    border-bottom: 1px solid #dadce0;
+    padding: 10px 0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo a {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #673ab7;
+}
+
+/* Íàâèãàöèÿ (Login/Logout, Survey List) */
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+    .nav-links a {
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+
+/* ====================================
+   3. ÊÍÎÏÊÈ È ÔÎĞÌÛ
+   ==================================== */
+.btn-primary {
+    background-color: #673ab7;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+    .btn-primary:hover {
+        background-color: #5d31a5;
+    }
+
+/* Ôîğìû (Login/Register) */
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+}
+
+.auth-card {
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.validation-summary-errors, .field-validation-error {
+    color: #d93025;
+    font-size: 0.85rem;
+    margin-top: 5px;
+}

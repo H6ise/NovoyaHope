@@ -1,0 +1,94 @@
+﻿@{
+    ViewData["Title"] = "Ответ записан";
+    Layout = "_Layout";
+}
+
+<div class="thank-you-body">
+    <div class="thank-you-card">
+        <div class="top-accent"></div>
+
+        <h1 class="thank-title">NovoyaHope Forms</h1>
+
+        <div class="thank-message">
+            Ответ записан.
+        </div>
+
+        <div class="thank-links">
+            <a href="/" class="create-link">Создать собственный опрос</a>
+        </div>
+    </div>
+
+    <div class="footer-branding">
+        Создано с помощью <b>NovoyaHope Forms</b>
+    </div>
+</div>
+
+<style>
+    .thank-you-body {
+        background-color: #f0ebf8;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-top: 50px;
+        font-family: 'Roboto', sans-serif;
+    }
+
+    .thank-you-card {
+        background: white;
+        border: 1px solid #dadce0;
+        border-radius: 8px;
+        padding: 24px;
+        width: 100%;
+        max-width: 640px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .top-accent {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 10px;
+        background-color: #673ab7;
+    }
+
+    .thank-title {
+        font-size: 24pt;
+        font-weight: 400;
+        margin-top: 15px;
+        margin-bottom: 25px;
+        color: #202124;
+    }
+
+    .thank-message {
+        font-size: 14px;
+        color: #202124;
+        margin-bottom: 30px;
+    }
+
+    .thank-links a {
+        font-size: 14px;
+        color: #1a73e8; /* Синий цвет ссылок Google */
+        text-decoration: none;
+    }
+
+        .thank-links a:hover {
+            text-decoration: underline;
+        }
+
+    .create-link {
+        color: #5f6368 !important;
+        font-size: 12px !important;
+        display: block;
+        margin-top: 20px;
+    }
+
+    .footer-branding {
+        text-align: center;
+        font-size: 12px;
+        color: #5f6368;
+        margin-top: 20px;
+    }
+</style>

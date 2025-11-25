@@ -1,0 +1,304 @@
+﻿@model NovoyaHope.Models.ViewModels.PassSurveyViewModels.PassSurveyViewModel
+@using NovoyaHope.Models
+
+@{
+    ViewData["Title"] = Model.Title;
+    Layout = "_Layout";
+}
+
+<div class="pass-body">
+    <div class="pass-container">
+
+        <div class="pass-header-card">
+            <h1 class="survey-title">@Model.Title</h1>
+            @if (!string.IsNullOrWhiteSpace(Model.Description))
+            {
+                <p class="survey-description">@Model.Description</p>
+            }
+
+            <hr class="header-divider" />
+
+            <div class="survey-meta">
+                @if (Model.IsAnonymous)
+                {
+                    <small>🔒 Опрос анонимный. Ваш email не будет сохранен.</small>
+                }
+                else
+                {
+                    <small>👤 Вы отвечаете как: <strong>@User.Identity.Name</strong></small>
+                }
+                <div class="required-hint">* Обязательный вопрос</div>
+            </div>
+        </div>
+
+        <form asp-controller="Public" asp-action="SubmitResponse" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="SurveyId" value="@Model.Id" />
+
+            @foreach (var question in Model.Questions) // Сортировка уже должна быть сделана в контроллере
+            {
+                <div class="question-card @(question.Type == QuestionType.ShortText || question.Type == QuestionType.ParagraphText ? "" : "choice-card")">
+
+                    <div class="question-text">
+                        @question.Text
+                        @if (question.IsRequired)
+                        {
+                            <span class="req-star">*</span>
+                        }
+                    </div>
+
+                    <div class="answer-area">
+                        @switch (question.Type)
+                        {
+                            // --- Текстовые поля ---
+                            case QuestionType.ShortText:
+                                <input type="text" class="input-line"
+                                       name="Answers[@question.Id].TextAnswer"
+                                       placeholder="Мой ответ"
+                                       @(question.IsRequired ? "required" : "")>
+                                break;
+
+                            case QuestionType.ParagraphText:
+                                <textarea class="input-line"
+                              name="Answers[@question.Id].TextAnswer"
+                              placeholder="Мой ответ"
+                              rows="4"
+                              @(question.IsRequired ? "required" : "")></textarea>
+                                break;
+
+                            // --- Одиночный выбор (Radio) ---
+                            case QuestionType.SingleChoice:
+                                @foreach (var option in question.Options)
+                                {
+                                    <label class="radio-option">
+                                        <input type="radio"
+                                               name="Answers[@question.Id].SelectedOptionIds"
+                                               value="@option.Id"
+                                               @(question.IsRequired ? "required" : "")>
+                                        <span class="option-text">@option.Text</span>
+                                    </label>
+                                }
+                                break;
+
+                            // --- Множественный выбор (Checkbox) ---
+                            case QuestionType.MultipleChoice:
+                                @foreach (var option in question.Options)
+                                {
+                                    <label class="checkbox-option">
+                                        <input type="checkbox"
+                                               name="Answers[@question.Id].SelectedOptionIds"
+                                               value="@option.Id">
+                                        <span class="option-text">@option.Text</span>
+                                    </label>
+                                }
+                                break;
+
+                            // --- Шкала (1-5) ---
+                            case QuestionType.Scale:
+                                <div class="scale-wrapper">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        // Ищем соответствующую опцию (если они были сохранены как опции)
+                                        // Или просто используем числовое значение, если логика позволяет
+                                        // Для надежности лучше использовать ID опций, если они есть.
+                                        // Если нет, предполагаем, что сервер обработает значения 1-5.
+                                        // Здесь мы берем ID опции, соответствующей порядку i, если она существует
+                                        var optionId = question.Options.FirstOrDefault(o => o.Order == i)?.Id;
+
+                                        <label class="scale-item">
+                                            <span>@i</span>
+                                            <input type="radio"
+                                                   name="Answers[@question.Id].SelectedOptionIds"
+                                                   value="@(optionId ?? i)"
+                                                   @(question.IsRequired ? "required" : "")>
+                                        </label>
+                                    }
+                                </div>
+                                <div class="scale-labels">
+                                    <span>Хуже</span>
+                                    <span>Лучше</span>
+                                </div>
+                                break;
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="submit-footer">
+                <button type="submit" class="btn-submit">Отправить</button>
+                <div class="clear-form-link">Очистить форму</div>
+            </div>
+        </form>
+    </div>
+
+    <div class="footer-branding">
+        Создано с помощью <b>NovoyaHope Forms</b>
+    </div>
+</div>
+
+<style>
+    .pass-body {
+        background-color: #f0ebf8; /* Очень светло-фиолетовый фон */
+        min-height: 100vh;
+        padding-bottom: 50px;
+        font-family: 'Roboto', sans-serif;
+    }
+
+    .pass-container {
+        max-width: 640px;
+        margin: 0 auto;
+        padding-top: 15px;
+    }
+
+    /* Карточки */
+    .pass-header-card, .question-card {
+        background: white;
+        border: 1px solid #dadce0;
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 12px;
+    }
+
+    /* Шапка */
+    .pass-header-card {
+        border-top: 10px solid #673ab7; /* Фирменный цвет */
+    }
+
+    .survey-title {
+        font-size: 24pt;
+        font-weight: 400;
+        margin-bottom: 10px;
+        color: #202124;
+    }
+
+    .survey-description {
+        font-size: 11pt;
+        color: #202124;
+        margin-bottom: 10px;
+    }
+
+    .header-divider {
+        margin: 15px 0;
+        border: 0;
+        border-top: 1px solid #dadce0;
+    }
+
+    .survey-meta {
+        font-size: 0.9rem;
+        color: #5f6368;
+    }
+
+    .required-hint, .req-star {
+        color: #d93025;
+    }
+
+    /* Вопросы */
+    .question-text {
+        font-size: 16px;
+        color: #202124;
+        margin-bottom: 20px;
+        font-weight: 500;
+    }
+
+    /* Поля ввода */
+    .input-line {
+        width: 100%;
+        border: none;
+        border-bottom: 1px solid #dadce0;
+        // dotted padding: 5px 0;
+        font-size: 14px;
+        outline: none;
+        transition: border-bottom 0.3s;
+    }
+
+        .input-line:focus {
+            border-bottom: 2px solid #673ab7;
+        }
+
+    /* Radio и Checkbox */
+    .radio-option, .checkbox-option {
+        display: flex;
+        align-items: center;
+        padding: 8px 0;
+        cursor: pointer;
+    }
+
+        .radio-option input, .checkbox-option input {
+            margin-right: 15px;
+            accent-color: #673ab7;
+            width: 18px;
+            height: 18px;
+        }
+
+    .option-text {
+        font-size: 14px;
+        color: #202124;
+    }
+
+    /* Шкала */
+    .scale-wrapper {
+        display: flex;
+        justify-content: space-between;
+        max-width: 300px;
+        margin: 10px 0;
+    }
+
+    .scale-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+    }
+
+        .scale-item span {
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+    .scale-labels {
+        display: flex;
+        justify-content: space-between;
+        max-width: 300px;
+        font-size: 12px;
+        color: #5f6368;
+    }
+
+    /* Футер */
+    .submit-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+    }
+
+    .btn-submit {
+        background-color: #673ab7;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 10px 24px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+        .btn-submit:hover {
+            background-color: #5d31a5;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+    .clear-form-link {
+        color: #673ab7;
+        font-size: 14px;
+        cursor: pointer;
+        font-weight: 500;
+    }
+
+    .footer-branding {
+        text-align: center;
+        font-size: 12px;
+        color: #5f6368;
+        margin-top: 20px;
+    }
+</style>

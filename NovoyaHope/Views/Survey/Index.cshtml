@@ -1,0 +1,77 @@
+﻿@model IEnumerable<NovoyaHope.Models.Survey>
+
+@{
+    ViewData["Title"] = "Мои Опросы";
+    Layout = "_Layout";
+}
+
+<div class="container mt-4">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h2 style="font-weight: 400; color: #202124;">Мои формы</h2>
+
+        <div class="search-box" style="background: #f1f3f4; padding: 10px 15px; border-radius: 8px; width: 300px;">
+            <input type="text" placeholder="Поиск..." style="border: none; background: transparent; outline: none; width: 100%;">
+        </div>
+    </div>
+
+    <div class="cards-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;">
+
+        <a asp-action="Edit" class="card-create" style="display: block; text-decoration: none; color: inherit;">
+            <div style="background: white; border: 1px solid #dadce0; border-radius: 8px; height: 250px; display: flex; flex-direction: column; transition: box-shadow 0.2s;">
+                <div style="flex-grow: 1; display: flex; justify-content: center; align-items: center; background: #fff; border-bottom: 1px solid #dadce0;">
+                    <span style="font-size: 3rem; color: #dadce0;">+</span>
+                </div>
+                <div style="padding: 15px;">
+                    <span style="font-weight: 500;">Создать форму</span>
+                </div>
+            </div>
+        </a>
+
+        @foreach (var survey in Model)
+        {
+            <div class="survey-card" style="background: white; border: 1px solid #dadce0; border-radius: 8px; height: 250px; display: flex; flex-direction: column; overflow: hidden; position: relative;">
+
+                <a asp-action="Edit" asp-route-id="@survey.Id" style="text-decoration: none; color: inherit; flex-grow: 1;">
+                    <div style="height: 150px; background-color: #e8f0fe; display: flex; justify-content: center; align-items: center;">
+                        <span style="font-size: 3rem; opacity: 0.2;">📝</span>
+                    </div>
+
+                    <div style="padding: 15px;">
+                        <h5 style="margin: 0; font-size: 1rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            @(string.IsNullOrEmpty(survey.Title) ? "Новая форма" : survey.Title)
+                        </h5>
+                        <small style="color: #5f6368;">
+                            @if (survey.IsPublished)
+                            {
+                                <span style="color: #137333;">● Опубликовано</span>
+                            }
+                            else
+                            {
+                                <span>Черновик</span>
+                            }
+                        </small>
+                        <div style="margin-top: 5px; font-size: 0.8rem; color: #5f6368;">
+                            Изменено: @survey.CreatedDate.ToString("dd MMM")
+                        </div>
+                    </div>
+                </a>
+
+                <div style="position: absolute; bottom: 15px; right: 15px;">
+                    <a asp-action="Edit" asp-route-id="@survey.Id" title="Редактировать" style="margin-right: 10px;">✏️</a>
+                    @if (survey.IsPublished)
+                    {
+                        <a href="#" title="Смотреть ответы">📊</a>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    /* Небольшой ховер эффект для карточек */
+    .card-create:hover > div, .survey-card:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-color: #673ab7 !important;
+    }
+</style>

@@ -1,0 +1,180 @@
+﻿/* ====================================
+   1. ОБЩИЙ МАКЕТ КОНСТРУКТОРА
+   ==================================== */
+
+/* Верхняя панель конструктора (заголовок, кнопки Settings/Send) */
+.editor-header {
+    background-color: #ffffff;
+    border-bottom: 1px solid #dadce0;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.editor-title-input {
+    border: none;
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #202124;
+    padding: 5px 0;
+    width: 500px;
+    outline: none;
+}
+
+/* Основная рабочая область (вопросы + инструменты) */
+.editor-main {
+    display: flex;
+    justify-content: center;
+    padding: 40px 20px;
+    flex-grow: 1;
+    position: relative; /* Для позиционирования боковой панели */
+}
+
+/* Область, содержащая только вопросы */
+.questions-container {
+    width: 100%;
+    max-width: 800px;
+}
+
+/* ====================================
+   2. СТИЛИ КАРТОЧКИ ВОПРОСА
+   ==================================== */
+.question-block {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    padding: 25px;
+    margin-bottom: 15px;
+    border-left: 6px solid transparent; /* Для индикации активного состояния */
+    transition: border-left-color 0.2s, box-shadow 0.2s;
+}
+
+    /* Активное/редактируемое состояние */
+    .question-block.active-block {
+        border-left-color: #673ab7; /* Фиолетовая полоса слева */
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+.question-input, .option-input {
+    border: none;
+    border-bottom: 1px solid #dadce0;
+    padding: 8px 0;
+    font-size: 1rem;
+    width: 90%;
+    outline: none;
+    transition: border-bottom-color 0.2s;
+}
+
+    .question-input:focus, .option-input:focus {
+        border-bottom-color: #673ab7;
+    }
+
+/* Варианты ответов */
+.options-list {
+    margin-top: 20px;
+}
+
+.option-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+    .option-item input[type="radio"],
+    .option-item input[type="checkbox"] {
+        margin-right: 15px;
+        accent-color: #673ab7;
+    }
+
+.remove-option-btn {
+    background: none;
+    border: none;
+    color: #5f6368;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+/* ====================================
+   3. БОКОВАЯ ПАНЕЛЬ ИНСТРУМЕНТОВ (Летающий Бар)
+   ==================================== */
+.sidebar-tools {
+    /* Настройка для JS-контроля (абсолютное позиционирование) */
+    position: absolute;
+    left: calc(50% + 400px + 10px); /* Положение справа от контента (макс. 800px) */
+    top: 100px; /* Начальная позиция, устанавливается JS */
+
+    width: 48px;
+    height: fit-content;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    background-color: #ffffff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    transition: top 0.2s ease-out; /* Плавное следование */
+    z-index: 50;
+}
+
+.tool-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 5px 0;
+}
+
+.tool-icon {
+    width: 100%;
+    padding: 10px;
+    cursor: pointer;
+    color: #5f6368;
+    text-align: center;
+    font-size: 1.2rem;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+    .tool-icon:hover {
+        background-color: #f1f3f4;
+        color: #673ab7;
+    }
+
+/* ====================================
+   4. АДАПТИВНОСТЬ
+   ==================================== */
+
+@media (max-width: 992px) {
+    /* Скрываем боковую панель или переносим ее вниз на мобильных */
+    .sidebar-tools {
+        position: static;
+        margin-top: 20px;
+        width: 100%;
+        left: auto;
+        top: auto;
+        box-shadow: none;
+        border: none;
+    }
+
+    .tool-group {
+        flex-direction: row; /* Горизонтальное расположение инструментов */
+        justify-content: center;
+        border: 1px solid #dadce0;
+        border-radius: 8px;
+        background-color: #ffffff;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .tool-icon {
+        border-right: 1px solid #dadce0;
+        width: auto;
+    }
+
+        .tool-icon:last-child {
+            border-right: none;
+        }
+
+    .editor-title-input {
+        width: 100%;
+    }
+
+    .questions-container {
+        max-width: 100%;
+    }
+}
