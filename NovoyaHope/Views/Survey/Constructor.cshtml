@@ -137,17 +137,48 @@
 
                     <input type="hidden" id="deleted-elements" name="DeletedElements" value="" />
 
-                </div> <aside class="sidebar-tools">
-                    <div class="tool-group">
-                        <div class="tool-icon" id="add-question-btn" title="Добавить вопрос" onclick="addNewQuestion()">➕</div>
-                        <div class="tool-icon" title="Импортировать вопросы">📄</div>
-                        <div class="tool-icon" title="Добавить название и описание">Ｔt</div>
-                        <div class="tool-icon" title="Добавить изображение">🖼️</div>
-                        <div class="tool-icon" title="Добавить видео">🎬</div>
-                        <div class="tool-icon" title="Добавить раздел">▤</div>
-                    </div>
-                </aside>
+                </div>
             </div>
+
+            <!-- Летающий Бар (FAB - Floating Action Bar) -->
+            <div class="fab-container">
+                <div class="fab-menu" id="fab-menu">
+                    <div class="fab-item" onclick="addNewQuestion()">
+                        <span class="fab-label">Добавить вопрос</span>
+                        <button type="button" class="fab-action" title="Добавить вопрос">
+                            ➕
+                        </button>
+                    </div>
+                    <div class="fab-item" onclick="addSection()">
+                        <span class="fab-label">Добавить раздел</span>
+                        <button type="button" class="fab-action" title="Добавить раздел">
+                            📑
+                        </button>
+                    </div>
+                    <div class="fab-item" onclick="addImage()">
+                        <span class="fab-label">Добавить фото</span>
+                        <button type="button" class="fab-action" title="Добавить фото">
+                            🖼️
+                        </button>
+                    </div>
+                    <div class="fab-item" onclick="addVideo()">
+                        <span class="fab-label">Добавить видео</span>
+                        <button type="button" class="fab-action" title="Добавить видео">
+                            🎬
+                        </button>
+                    </div>
+                    <div class="fab-item" onclick="addTextBlock()">
+                        <span class="fab-label">Добавить текст</span>
+                        <button type="button" class="fab-action" title="Добавить текстовый блок">
+                            📝
+                        </button>
+                    </div>
+                </div>
+                <button type="button" class="fab-main" id="fab-main" onclick="toggleFabMenu()">
+                    ➕
+                </button>
+            </div>
+        </div>
 
             <div id="tab-settings" class="tab-content" style="display: none;">
                 <div style="max-width: 600px; margin: 40px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">

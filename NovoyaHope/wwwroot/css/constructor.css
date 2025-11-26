@@ -121,45 +121,145 @@
 }
 
 /* ====================================
-   3. БОКОВАЯ ПАНЕЛЬ ИНСТРУМЕНТОВ (Летающий Бар)
+   3. ЛЕТАЮЩИЙ БАР (FAB - Floating Action Bar)
    ==================================== */
-.sidebar-tools {
-    /* Настройка для JS-контроля (абсолютное позиционирование) */
-    position: absolute;
-    left: calc(50% + 400px + 10px); /* Положение справа от контента (макс. 800px) */
-    top: 100px; /* Начальная позиция, устанавливается JS */
 
-    width: 48px;
-    height: fit-content;
-    border: 1px solid #dadce0;
-    border-radius: 8px;
-    background-color: #ffffff;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-    transition: top 0.2s ease-out; /* Плавное следование */
-    z-index: 50;
+/* Главная кнопка FAB */
+.fab-container {
+    position: fixed;
+    right: 30px;
+    bottom: 30px;
+    z-index: 1000;
 }
 
-.tool-group {
+.fab-main {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-green-dark) 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    outline: none;
+}
+
+.fab-main:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(46, 125, 50, 0.5);
+}
+
+.fab-main:active {
+    transform: scale(0.95);
+}
+
+.fab-main.active {
+    transform: rotate(45deg);
+}
+
+/* Меню FAB */
+.fab-menu {
+    position: absolute;
+    bottom: 75px;
+    right: 0;
     display: flex;
     flex-direction: column;
+    gap: 12px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fab-menu.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Элементы меню FAB */
+.fab-item {
+    display: flex;
     align-items: center;
-    padding: 5px 0;
+    justify-content: flex-end;
+    gap: 10px;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.tool-icon {
-    width: 100%;
-    padding: 10px;
+.fab-menu.active .fab-item {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.fab-menu.active .fab-item:nth-child(1) {
+    transition-delay: 0.05s;
+}
+
+.fab-menu.active .fab-item:nth-child(2) {
+    transition-delay: 0.1s;
+}
+
+.fab-menu.active .fab-item:nth-child(3) {
+    transition-delay: 0.15s;
+}
+
+.fab-menu.active .fab-item:nth-child(4) {
+    transition-delay: 0.2s;
+}
+
+.fab-menu.active .fab-item:nth-child(5) {
+    transition-delay: 0.25s;
+}
+
+/* Подсказка для FAB кнопки */
+.fab-label {
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+}
+
+/* Кнопка действия в меню FAB */
+.fab-action {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: white;
+    color: var(--primary-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
     cursor: pointer;
-    color: #5f6368;
-    text-align: center;
-    font-size: 1.2rem;
-    transition: background-color 0.2s, color 0.2s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid var(--primary-green-lightest);
 }
 
-    .tool-icon:hover {
-        background-color: var(--bg-lighter);
-        color: var(--primary-green);
-    }
+.fab-action:hover {
+    background: var(--primary-green);
+    color: white;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+.fab-action:active {
+    transform: scale(0.95);
+}
+
+/* Старый sidebar-tools - оставляем для совместимости */
+.sidebar-tools {
+    display: none; /* Скрываем старую панель */
+}
 
 /* ====================================
    4. АДАПТИВНОСТЬ
@@ -590,4 +690,89 @@ textarea.input-line {
 .tooltip:hover .tooltiptext {
     visibility: visible;
     opacity: 1;
+}
+
+/* ====================================
+   7. СТИЛИ ДЛЯ НОВЫХ ЭЛЕМЕНТОВ
+   ==================================== */
+
+/* Раздел */
+.section-block {
+    background: linear-gradient(135deg, #f5faf5 0%, #e8f5e9 100%);
+    border-left: 6px solid var(--primary-green) !important;
+}
+
+.section-block .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-block .editor-title-input {
+    color: var(--primary-green-dark);
+    font-weight: 600;
+}
+
+/* Медиа-блоки (изображения и видео) */
+.media-block {
+    background: linear-gradient(135deg, #fff 0%, #f5f5f5 100%);
+    border-left: 6px solid var(--primary-green-lighter) !important;
+}
+
+.media-header {
+    display: flex;
+    align-items: center;
+}
+
+.image-upload-area,
+.video-upload-area {
+    transition: all 0.3s ease;
+}
+
+.image-upload-area:hover,
+.video-upload-area:hover {
+    border-color: var(--primary-green);
+    background: var(--bg-lighter);
+}
+
+/* Текстовый блок */
+.text-block {
+    background: #fafafa;
+    border-left: 6px solid #9e9e9e !important;
+}
+
+.text-block textarea {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.text-block textarea:focus {
+    background: white;
+    border-bottom: 2px solid var(--primary-green);
+}
+
+/* Адаптивность для FAB */
+@media (max-width: 768px) {
+    .fab-container {
+        right: 20px;
+        bottom: 20px;
+    }
+    
+    .fab-main {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+    
+    .fab-action {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+    
+    .fab-label {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+    }
 }

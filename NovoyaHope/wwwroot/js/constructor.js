@@ -1,11 +1,40 @@
-﻿// Глобальный счетчик для временных ID новых, несохраненных вопросов
+﻿// Глобальный счетчик для временных ID новых, несохраненных элементов
 let newQuestionCounter = -1;
 let newOptionCounter = -1;
+let newSectionCounter = -1;
+let newMediaCounter = -1;
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Constructor JavaScript loaded.');
     setupBlockActivation();
+    setupFAB();
 });
+
+// ===========================================
+// FAB (FLOATING ACTION BAR) УПРАВЛЕНИЕ
+// ===========================================
+
+function setupFAB() {
+    // Закрытие FAB меню при клике вне его
+    document.addEventListener('click', (e) => {
+        const fabContainer = document.querySelector('.fab-container');
+        const fabMenu = document.getElementById('fab-menu');
+        const fabMain = document.getElementById('fab-main');
+        
+        if (fabContainer && !fabContainer.contains(e.target)) {
+            fabMenu.classList.remove('active');
+            fabMain.classList.remove('active');
+        }
+    });
+}
+
+function toggleFabMenu() {
+    const fabMenu = document.getElementById('fab-menu');
+    const fabMain = document.getElementById('fab-main');
+    
+    fabMenu.classList.toggle('active');
+    fabMain.classList.toggle('active');
+}
 
 // ===========================================
 // 1. АКТИВАЦИЯ БЛОКА ВОПРОСА
@@ -380,4 +409,285 @@ function duplicateQuestion(button) {
     
     // Перенастраиваем слушателей
     setupBlockActivation();
+}
+
+// ===========================================
+// 5. ФУНКЦИИ ДЛЯ ДОБАВЛЕНИЯ НОВЫХ ЭЛЕМЕНТОВ
+// ===========================================
+
+// Добавить раздел (Section)
+function addSection() {
+    closeFabMenu();
+    
+    const tempId = newSectionCounter--;
+    const container = document.getElementById('questions-container');
+    
+    const sectionHtml = `
+    <div class="question-block section-block active" data-section-id="${tempId}" data-type="section">
+        <div class="section-header">
+            <input type="text" class="editor-title-input" 
+                   placeholder="Заголовок раздела" 
+                   name="Sections[${tempId}].Title"
+                   style="font-size: 1.3rem; font-weight: 600;">
+            <input type="hidden" name="Sections[${tempId}].Order" value="${Math.abs(tempId)}">
+        </div>
+        <div class="section-body" style="margin-top: 15px;">
+            <textarea class="question-input" 
+                      placeholder="Описание раздела (необязательно)" 
+                      name="Sections[${tempId}].Description"
+                      rows="3"
+                      style="width: 100%; resize: vertical;"></textarea>
+        </div>
+        <div class="question-footer">
+            <button type="button" class="btn-icon delete-btn" title="Удалить" onclick="deleteElement(this)">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+            <span style="color: #5f6368; font-size: 0.9rem; margin-left: auto;">
+                <i class="fas fa-layer-group"></i> Раздел
+            </span>
+        </div>
+    </div>
+    `;
+    
+    const newBlock = document.createElement('div');
+    newBlock.innerHTML = sectionHtml.trim();
+    const insertedBlock = newBlock.firstChild;
+    
+    // Снимаем активность со всех блоков
+    document.querySelectorAll('.question-block').forEach(block => block.classList.remove('active'));
+    
+    // Вставляем в конец контейнера
+    container.appendChild(insertedBlock);
+    
+    // Прокручиваем к новому блоку
+    insertedBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    insertedBlock.querySelector('.editor-title-input').focus();
+    
+    setupBlockActivation();
+}
+
+// Добавить изображение
+function addImage() {
+    closeFabMenu();
+    
+    const tempId = newMediaCounter--;
+    const container = document.getElementById('questions-container');
+    
+    const imageHtml = `
+    <div class="question-block media-block active" data-media-id="${tempId}" data-type="image">
+        <div class="media-header" style="margin-bottom: 15px;">
+            <i class="fas fa-image" style="color: var(--primary-green); font-size: 1.5rem; margin-right: 10px;"></i>
+            <input type="text" class="question-input" 
+                   placeholder="Название изображения (необязательно)" 
+                   name="Media[${tempId}].Title"
+                   style="font-size: 1.1rem;">
+            <input type="hidden" name="Media[${tempId}].Type" value="Image">
+            <input type="hidden" name="Media[${tempId}].Order" value="${Math.abs(tempId)}">
+        </div>
+        <div class="media-body">
+            <div class="image-upload-area" style="border: 2px dashed #dadce0; border-radius: 8px; padding: 30px; text-align: center; background: #f5faf5;">
+                <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: var(--primary-green); margin-bottom: 15px; display: block;"></i>
+                <p style="color: #5f6368; margin-bottom: 10px;">Перетащите изображение сюда или</p>
+                <label class="btn-primary" style="display: inline-block; cursor: pointer;">
+                    Выбрать файл
+                    <input type="file" accept="image/*" style="display: none;" 
+                           onchange="handleImageUpload(this, ${tempId})" 
+                           name="Media[${tempId}].File">
+                </label>
+                <input type="text" class="question-input" 
+                       placeholder="или введите URL изображения" 
+                       name="Media[${tempId}].Url"
+                       style="margin-top: 15px;">
+            </div>
+            <textarea class="question-input" 
+                      placeholder="Описание изображения (необязательно)" 
+                      name="Media[${tempId}].Description"
+                      rows="2"
+                      style="margin-top: 15px; width: 100%; resize: vertical;"></textarea>
+        </div>
+        <div class="question-footer">
+            <button type="button" class="btn-icon delete-btn" title="Удалить" onclick="deleteElement(this)">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+            <span style="color: #5f6368; font-size: 0.9rem; margin-left: auto;">
+                <i class="fas fa-image"></i> Изображение
+            </span>
+        </div>
+    </div>
+    `;
+    
+    const newBlock = document.createElement('div');
+    newBlock.innerHTML = imageHtml.trim();
+    const insertedBlock = newBlock.firstChild;
+    
+    // Снимаем активность со всех блоков
+    document.querySelectorAll('.question-block').forEach(block => block.classList.remove('active'));
+    
+    container.appendChild(insertedBlock);
+    insertedBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    setupBlockActivation();
+}
+
+// Добавить видео
+function addVideo() {
+    closeFabMenu();
+    
+    const tempId = newMediaCounter--;
+    const container = document.getElementById('questions-container');
+    
+    const videoHtml = `
+    <div class="question-block media-block active" data-media-id="${tempId}" data-type="video">
+        <div class="media-header" style="margin-bottom: 15px;">
+            <i class="fas fa-video" style="color: var(--primary-green); font-size: 1.5rem; margin-right: 10px;"></i>
+            <input type="text" class="question-input" 
+                   placeholder="Название видео (необязательно)" 
+                   name="Media[${tempId}].Title"
+                   style="font-size: 1.1rem;">
+            <input type="hidden" name="Media[${tempId}].Type" value="Video">
+            <input type="hidden" name="Media[${tempId}].Order" value="${Math.abs(tempId)}">
+        </div>
+        <div class="media-body">
+            <div class="video-upload-area" style="border: 2px dashed #dadce0; border-radius: 8px; padding: 30px; text-align: center; background: #f5faf5;">
+                <i class="fas fa-play-circle" style="font-size: 3rem; color: var(--primary-green); margin-bottom: 15px; display: block;"></i>
+                <p style="color: #5f6368; margin-bottom: 10px;">Вставьте ссылку на YouTube или введите URL</p>
+                <input type="text" class="question-input" 
+                       placeholder="https://www.youtube.com/watch?v=..." 
+                       name="Media[${tempId}].Url"
+                       style="margin-top: 10px; width: 100%;">
+                <p style="color: #999; font-size: 0.85rem; margin-top: 10px;">
+                    Поддерживаются: YouTube, Vimeo, или прямая ссылка на видео
+                </p>
+            </div>
+            <textarea class="question-input" 
+                      placeholder="Описание видео (необязательно)" 
+                      name="Media[${tempId}].Description"
+                      rows="2"
+                      style="margin-top: 15px; width: 100%; resize: vertical;"></textarea>
+        </div>
+        <div class="question-footer">
+            <button type="button" class="btn-icon delete-btn" title="Удалить" onclick="deleteElement(this)">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+            <span style="color: #5f6368; font-size: 0.9rem; margin-left: auto;">
+                <i class="fas fa-video"></i> Видео
+            </span>
+        </div>
+    </div>
+    `;
+    
+    const newBlock = document.createElement('div');
+    newBlock.innerHTML = videoHtml.trim();
+    const insertedBlock = newBlock.firstChild;
+    
+    // Снимаем активность со всех блоков
+    document.querySelectorAll('.question-block').forEach(block => block.classList.remove('active'));
+    
+    container.appendChild(insertedBlock);
+    insertedBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    setupBlockActivation();
+}
+
+// Добавить текстовый блок
+function addTextBlock() {
+    closeFabMenu();
+    
+    const tempId = newSectionCounter--;
+    const container = document.getElementById('questions-container');
+    
+    const textHtml = `
+    <div class="question-block text-block active" data-text-id="${tempId}" data-type="text">
+        <div class="text-body">
+            <textarea class="question-input" 
+                      placeholder="Введите текст или инструкции для респондентов..." 
+                      name="TextBlocks[${tempId}].Content"
+                      rows="5"
+                      style="width: 100%; resize: vertical; font-size: 1rem; line-height: 1.6;"></textarea>
+            <input type="hidden" name="TextBlocks[${tempId}].Order" value="${Math.abs(tempId)}">
+        </div>
+        <div class="question-footer">
+            <button type="button" class="btn-icon delete-btn" title="Удалить" onclick="deleteElement(this)">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+            <span style="color: #5f6368; font-size: 0.9rem; margin-left: auto;">
+                <i class="fas fa-align-left"></i> Текстовый блок
+            </span>
+        </div>
+    </div>
+    `;
+    
+    const newBlock = document.createElement('div');
+    newBlock.innerHTML = textHtml.trim();
+    const insertedBlock = newBlock.firstChild;
+    
+    // Снимаем активность со всех блоков
+    document.querySelectorAll('.question-block').forEach(block => block.classList.remove('active'));
+    
+    container.appendChild(insertedBlock);
+    insertedBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    insertedBlock.querySelector('textarea').focus();
+    
+    setupBlockActivation();
+}
+
+// Удалить любой элемент (универсальная функция)
+function deleteElement(button) {
+    if (confirm('Вы уверены, что хотите удалить этот элемент?')) {
+        const block = button.closest('.question-block');
+        block.remove();
+    }
+}
+
+// Закрыть FAB меню
+function closeFabMenu() {
+    const fabMenu = document.getElementById('fab-menu');
+    const fabMain = document.getElementById('fab-main');
+    
+    if (fabMenu) {
+        fabMenu.classList.remove('active');
+        fabMain.classList.remove('active');
+    }
+}
+
+// Обработка загрузки изображения
+function handleImageUpload(input, mediaId) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            // Создаем превью изображения
+            const uploadArea = input.closest('.image-upload-area');
+            uploadArea.innerHTML = `
+                <img src="${e.target.result}" style="max-width: 100%; max-height: 400px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <div style="margin-top: 15px;">
+                    <button type="button" class="btn-secondary" onclick="resetImageUpload(this, ${mediaId})">
+                        Изменить изображение
+                    </button>
+                </div>
+            `;
+        };
+        
+        reader.readAsDataURL(file);
+    }
+}
+
+// Сброс загрузки изображения
+function resetImageUpload(button, mediaId) {
+    const uploadArea = button.closest('.image-upload-area');
+    uploadArea.innerHTML = `
+        <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: var(--primary-green); margin-bottom: 15px; display: block;"></i>
+        <p style="color: #5f6368; margin-bottom: 10px;">Перетащите изображение сюда или</p>
+        <label class="btn-primary" style="display: inline-block; cursor: pointer;">
+            Выбрать файл
+            <input type="file" accept="image/*" style="display: none;" 
+                   onchange="handleImageUpload(this, ${mediaId})" 
+                   name="Media[${mediaId}].File">
+        </label>
+        <input type="text" class="question-input" 
+               placeholder="или введите URL изображения" 
+               name="Media[${mediaId}].Url"
+               style="margin-top: 15px;">
+    `;
 }

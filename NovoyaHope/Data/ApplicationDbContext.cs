@@ -31,6 +31,10 @@ namespace NovoyaHope.Data
         public DbSet<TemplateQuestion> TemplateQuestions { get; set; }
         public DbSet<TemplateAnswerOption> TemplateAnswerOptions { get; set; }
 
+        // --- DbSet'ы для Разделов и Медиа ---
+        public DbSet<Section> Sections { get; set; }
+        public DbSet<Media> Media { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -72,6 +76,26 @@ namespace NovoyaHope.Data
             // Настройка составного ключа для связующей таблицы, если используется UserMultipleChoiceAnswer
             // builder.Entity<UserMultipleChoiceAnswer>()
             //     .HasKey(umca => new { umca.UserAnswerId, umca.AnswerOptionId });
+
+            // --- Настройка для Разделов ---
+            builder.Entity<Section>()
+                .HasOne(s => s.Survey)
+                .WithMany()
+                .HasForeignKey(s => s.SurveyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // --- Настройка для Медиа ---
+            builder.Entity<Media>()
+                .HasOne(m => m.Survey)
+                .WithMany()
+                .HasForeignKey(m => m.SurveyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<Media>()
+                .HasOne(m => m.Question)
+                .WithMany()
+                .HasForeignKey(m => m.QuestionId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }
