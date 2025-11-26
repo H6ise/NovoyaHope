@@ -6,11 +6,18 @@ namespace NovoyaHope.Models
 {
     public enum QuestionType
     {
-        ShortText,
-        ParagraphText,
-        SingleChoice,     // Радио-кнопки
-        MultipleChoice,   // Чек-боксы
-        Scale
+        ShortText,        // Текст (строка)
+        ParagraphText,    // Текст (абзац)
+        SingleChoice,     // Один из списка (радио-кнопки)
+        MultipleChoice,   // Несколько из списка (чек-боксы)
+        Dropdown,         // Раскрывающийся список
+        FileUpload,       // Загрузка файлов
+        Scale,            // Шкала (линейная)
+        Rating,           // Оценка (звезды)
+        CheckboxGrid,     // Сетка флажков
+        RadioGrid,        // Сетка (множественный выбор)
+        Date,             // Дата
+        Time              // Время
     }
 
     public class Question

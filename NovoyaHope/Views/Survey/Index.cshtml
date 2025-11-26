@@ -5,85 +5,233 @@
     Layout = "_Layout";
 }
 
-<div class="container mt-4">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-        <h2 style="font-weight: 400; color: #202124;">Мои формы</h2>
+@section Styles {
+    <link rel="stylesheet" href="~/css/surveys.css" asp-append-version="true" />
+}
 
-        <div class="search-box" style="background: #f1f3f4; padding: 10px 15px; border-radius: 8px; width: 300px;">
-            <input type="text" placeholder="Поиск..." style="border: none; background: transparent; outline: none; width: 100%;">
-        </div>
-    </div>
-
-    <div class="cards-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;">
-
-        <a asp-action="Edit" class="card-create" style="display: block; text-decoration: none; color: inherit;">
-            <div style="background: white; border: 2px dashed #c8e6c9; border-radius: 12px; height: 250px; display: flex; flex-direction: column; transition: all 0.3s;">
-                <div style="flex-grow: 1; display: flex; justify-content: center; align-items: center; background: #f5faf5; border-bottom: 2px dashed #c8e6c9;">
-                    <span style="font-size: 3rem; color: #4caf50;">+</span>
-                </div>
-                <div style="padding: 15px;">
-                    <span style="font-weight: 600; color: #2e7d32;">Создать форму</span>
-                </div>
+<div class="surveys-page">
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="header-content">
+                <h1 class="page-title">
+                    <i class="fas fa-clipboard-list"></i>
+                    Мои опросы
+                </h1>
+                <p class="page-subtitle">Управляйте своими опросами и анкетами</p>
             </div>
-        </a>
+            <div class="header-actions">
+                <a asp-action="Templates" class="btn-secondary-action">
+                    <i class="fas fa-layer-group"></i>
+                    Шаблоны
+                </a>
+                <a asp-action="Edit" class="btn-primary-action">
+                    <i class="fas fa-plus"></i>
+                    Создать опрос
+                </a>
+            </div>
+        </div>
 
-        @foreach (var survey in Model)
-        {
-            <div class="survey-card" style="background: white; border: 2px solid #e0e0e0; border-radius: 12px; height: 250px; display: flex; flex-direction: column; overflow: hidden; position: relative; transition: all 0.3s;">
+        <!-- Filters & Search -->
+        <div class="toolbar">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="searchInput" class="search-input" placeholder="Поиск опросов...">
+            </div>
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">
+                    <i class="fas fa-th"></i> Все
+                </button>
+                <button class="filter-btn" data-filter="published">
+                    <i class="fas fa-check-circle"></i> Опубликованные
+                </button>
+                <button class="filter-btn" data-filter="draft">
+                    <i class="fas fa-file"></i> Черновики
+                </button>
+            </div>
+            <select class="sort-select">
+                <option value="date-desc">Сначала новые</option>
+                <option value="date-asc">Сначала старые</option>
+                <option value="title">По названию</option>
+            </select>
+        </div>
 
-                <a asp-action="Edit" asp-route-id="@survey.Id" style="text-decoration: none; color: inherit; flex-grow: 1;">
-                    <div style="height: 150px; background: linear-gradient(135deg, #c8e6c9 0%, #f1f8f4 100%); display: flex; justify-content: center; align-items: center;">
-                        <span style="font-size: 3rem; opacity: 0.3;">📝</span>
-                    </div>
+        <!-- Surveys Grid -->
+        <div class="surveys-grid">
+            <!-- Create New Card -->
+            <a asp-action="Edit" class="survey-card card-create">
+                <div class="card-icon-area">
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+                <div class="card-footer">
+                    <h3 class="card-title">Создать новый опрос</h3>
+                    <p class="card-subtitle">Начните с пустого шаблона</p>
+                </div>
+            </a>
 
-                    <div style="padding: 15px;">
-                        <h5 style="margin: 0; font-size: 1rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #1a1a1a;">
-                            @(string.IsNullOrEmpty(survey.Title) ? "Новая форма" : survey.Title)
-                        </h5>
-                        <small style="color: #5f6368; display: block; margin-top: 5px;">
-                            @if (survey.IsPublished)
-                            {
-                                <span style="color: #2e7d32; font-weight: 600;">● Опубликовано</span>
-                            }
-                            else
-                            {
-                                <span>Черновик</span>
-                            }
-                        </small>
-                        <div style="margin-top: 5px; font-size: 0.8rem; color: #5f6368;">
-                            Изменено: @survey.CreatedDate.ToString("dd MMM")
+            <!-- Survey Cards -->
+            @foreach (var survey in Model)
+            {
+                <div class="survey-card" data-status="@(survey.IsPublished ? "published" : "draft")" data-title="@survey.Title">
+                    <div class="card-header-bar @(survey.IsPublished ? "published" : "draft")">
+                        @if (survey.IsPublished)
+                        {
+                            <span class="status-badge published">
+                                <i class="fas fa-check-circle"></i> Опубликован
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="status-badge draft">
+                                <i class="fas fa-edit"></i> Черновик
+                            </span>
+                        }
+                        <div class="card-menu">
+                            <button class="menu-btn" onclick="toggleMenu(event, @survey.Id)">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div class="dropdown-menu" id="menu-@survey.Id">
+                                <a asp-action="Edit" asp-route-id="@survey.Id" class="dropdown-item">
+                                    <i class="fas fa-edit"></i> Редактировать
+                                </a>
+                                @if (survey.IsPublished)
+                                {
+                                    <a asp-action="Results" asp-route-id="@survey.Id" class="dropdown-item">
+                                        <i class="fas fa-chart-bar"></i> Результаты
+                                    </a>
+                                    <a asp-controller="Public" asp-action="ViewSurvey" asp-route-id="@survey.Id" target="_blank" class="dropdown-item">
+                                        <i class="fas fa-external-link-alt"></i> Открыть
+                                    </a>
+                                    <button onclick="copySurveyLink(@survey.Id)" class="dropdown-item">
+                                        <i class="fas fa-link"></i> Копировать ссылку
+                                    </button>
+                                }
+                                <div class="dropdown-divider"></div>
+                                <a href="#" class="dropdown-item text-danger">
+                                    <i class="fas fa-trash"></i> Удалить
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </a>
+                    
+                    <a asp-action="Edit" asp-route-id="@survey.Id" class="card-content">
+                        <div class="card-icon-preview">
+                            <i class="fas fa-poll"></i>
+                        </div>
+                        <h3 class="card-title">
+                            @(string.IsNullOrEmpty(survey.Title) ? "Без названия" : survey.Title)
+                        </h3>
+                        @if (!string.IsNullOrEmpty(survey.Description))
+                        {
+                            <p class="card-description">@survey.Description</p>
+                        }
+                    </a>
+                    
+                    <div class="card-footer">
+                        <div class="card-info">
+                            <span class="info-item">
+                                <i class="fas fa-calendar"></i>
+                                @survey.CreatedDate.ToString("dd MMM yyyy")
+                            </span>
+                            @if (survey.IsPublished)
+                            {
+                                <span class="info-item">
+                                    <i class="fas fa-users"></i>
+                                    0 ответов
+                                </span>
+                            }
+                        </div>
+                        <div class="card-actions">
+                            @if (survey.IsPublished)
+                            {
+                                <a asp-action="Results" asp-route-id="@survey.Id" class="action-btn" title="Результаты">
+                                    <i class="fas fa-chart-line"></i>
+                                </a>
+                            }
+                            <a asp-action="Edit" asp-route-id="@survey.Id" class="action-btn" title="Редактировать">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
 
-                <div style="position: absolute; bottom: 15px; right: 15px; display: flex; gap: 10px;">
-                    <a asp-action="Edit" asp-route-id="@survey.Id" title="Редактировать" style="padding: 5px 10px; background: #f1f8f4; border-radius: 6px; transition: all 0.2s;">✏️</a>
-                    @if (survey.IsPublished)
-                    {
-                        <a asp-controller="Survey" asp-action="Results" asp-route-id="@survey.Id" title="Смотреть ответы" style="padding: 5px 10px; background: #f1f8f4; border-radius: 6px; transition: all 0.2s;">📊</a>
-                        <a asp-controller="Public" asp-action="ViewSurvey" asp-route-id="@survey.Id" target="_blank" title="Открыть опрос" style="padding: 5px 10px; background: #c8e6c9; border-radius: 6px; transition: all 0.2s;">🔗</a>
-                    }
+        <!-- Empty State -->
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <i class="fas fa-clipboard-list"></i>
+                <h3>У вас пока нет опросов</h3>
+                <p>Создайте свой первый опрос или выберите готовый шаблон</p>
+                <div class="empty-actions">
+                    <a asp-action="Edit" class="btn-primary-action">
+                        <i class="fas fa-plus"></i>
+                        Создать опрос
+                    </a>
+                    <a asp-action="Templates" class="btn-secondary-action">
+                        <i class="fas fa-layer-group"></i>
+                        Шаблоны
+                    </a>
                 </div>
             </div>
         }
     </div>
 </div>
 
-<style>
-    /* Ховер эффект для карточек */
-    .card-create:hover > div {
-        box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15);
-        border-color: #4caf50 !important;
-        transform: translateY(-2px);
-    }
-    
-    .survey-card:hover {
-        box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15);
-        border-color: #4caf50 !important;
-        transform: translateY(-2px);
-    }
-    
-    .survey-card a:hover {
-        background-color: #f5faf5;
-    }
-</style>
+@section Scripts {
+    <script>
+        // Search functionality
+        document.getElementById('searchInput')?.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll('.survey-card[data-title]').forEach(card => {
+                const title = card.getAttribute('data-title').toLowerCase();
+                card.style.display = title.includes(searchTerm) ? '' : 'none';
+            });
+        });
+
+        // Filter functionality
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                const filter = this.getAttribute('data-filter');
+                document.querySelectorAll('.survey-card[data-status]').forEach(card => {
+                    const status = card.getAttribute('data-status');
+                    card.style.display = (filter === 'all' || filter === status) ? '' : 'none';
+                });
+            });
+        });
+
+        // Menu toggle
+        function toggleMenu(event, id) {
+            event.preventDefault();
+            event.stopPropagation();
+            const menu = document.getElementById('menu-' + id);
+            document.querySelectorAll('.dropdown-menu').forEach(m => {
+                if (m !== menu) m.classList.remove('show');
+            });
+            menu.classList.toggle('show');
+        }
+
+        // Close menus on outside click
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                menu.classList.remove('show');
+            });
+        });
+
+        // Copy survey link
+        function copySurveyLink(id) {
+            const link = window.location.origin + '/Public/ViewSurvey/' + id;
+            navigator.clipboard.writeText(link).then(() => {
+                if (typeof showToast === 'function') {
+                    showToast('Ссылка скопирована!', 'success');
+                } else {
+                    alert('Ссылка скопирована: ' + link);
+                }
+            });
+        }
+    </script>
+}

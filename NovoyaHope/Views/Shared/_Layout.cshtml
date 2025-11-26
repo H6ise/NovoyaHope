@@ -3,53 +3,208 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - NovoyaHope</title>
+    <title>@ViewData["Title"] - NovoyaHope Forms</title>
 
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 
     @RenderSection("Styles", required: false)
-
     @RenderSection("ConstructorStyles", required: false)
 </head>
 <body>
-    <header class="main-header">
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">
-                    <a asp-area="" asp-controller="Survey" asp-action="Index">NovoyaHope</a>
-                </div>
+    <!-- Modern Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <!-- Logo -->
+            <div class="navbar-brand">
+                <a asp-controller="Home" asp-action="Index" class="brand-link">
+                    <i class="fas fa-poll-h brand-icon"></i>
+                    <span class="brand-text">NovoyaHope Forms</span>
+                </a>
+            </div>
 
-                <nav>
-                    <ul class="nav-links">
-                        @if (User.Identity.IsAuthenticated)
-                        {
-                            <li>
-                                <a asp-controller="Survey" asp-action="Index">Мои опросы</a>
-                            </li>
-                        }
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Открыть меню">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
 
-                        <partial name="_LoginPartial" />
-                    </ul>
-                </nav>
+            <!-- Navigation Links -->
+            <div class="navbar-menu" id="navbarMenu">
+                <ul class="nav-links">
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <li class="nav-item">
+                            <a asp-controller="Home" asp-action="Index" class="nav-link">
+                                <i class="fas fa-home"></i>
+                                <span>Главная</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Survey" asp-action="Index" class="nav-link">
+                                <i class="fas fa-clipboard-list"></i>
+                                <span>Мои опросы</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Survey" asp-action="Templates" class="nav-link">
+                                <i class="fas fa-layer-group"></i>
+                                <span>Шаблоны</span>
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a href="#" class="nav-link dropdown-toggle" id="userDropdown">
+                                <i class="fas fa-user-circle"></i>
+                                <span>@User.Identity.Name</span>
+                                <i class="fas fa-chevron-down dropdown-arrow"></i>
+                            </a>
+                            <div class="dropdown-menu" id="userDropdownMenu">
+                                <a asp-controller="Account" asp-action="Profile" class="dropdown-item">
+                                    <i class="fas fa-user"></i>
+                                    Профиль
+                                </a>
+                                <a asp-controller="Account" asp-action="Settings" class="dropdown-item">
+                                    <i class="fas fa-cog"></i>
+                                    Настройки
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <form asp-controller="Account" asp-action="Logout" method="post" class="dropdown-form">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="dropdown-item logout-btn">
+                                        <i class="fas fa-sign-out-alt"></i>
+                                        Выход
+                                    </button>
+                                </form>
+                            </div>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="nav-item">
+                            <a asp-controller="Home" asp-action="Index" class="nav-link">
+                                <i class="fas fa-home"></i>
+                                <span>Главная</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Account" asp-action="Login" class="nav-link">
+                                <i class="fas fa-sign-in-alt"></i>
+                                <span>Вход</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Account" asp-action="Register" class="btn-primary-nav">
+                                Регистрация
+                            </a>
+                        </li>
+                    }
+                </ul>
             </div>
         </div>
-    </header>
+    </nav>
 
-    <main role="main" class="pb-3">
+    <!-- Main Content -->
+    <main class="main-content">
         @RenderBody()
     </main>
 
-    <footer class="border-top footer text-muted mt-5">
-        <div class="container text-center">
-            &copy; 2025 - NovoyaHope
+    <!-- Modern Footer -->
+    <footer class="modern-footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <!-- About Section -->
+                <div class="footer-section">
+                    <h3 class="footer-title">NovoyaHope Forms</h3>
+                    <p class="footer-text">Современная платформа для создания опросов и анкет с мощными инструментами анализа.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="social-link" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-link" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="social-link" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+
+                <!-- Quick Links -->
+                <div class="footer-section">
+                    <h4 class="footer-subtitle">Быстрые ссылки</h4>
+                    <ul class="footer-links">
+                        <li><a asp-controller="Home" asp-action="Index">Главная</a></li>
+                        <li><a asp-controller="Home" asp-action="About">О нас</a></li>
+                        <li><a asp-controller="Home" asp-action="Features">Возможности</a></li>
+                        <li><a asp-controller="Home" asp-action="Pricing">Тарифы</a></li>
+                    </ul>
+                </div>
+
+                <!-- Resources -->
+                <div class="footer-section">
+                    <h4 class="footer-subtitle">Ресурсы</h4>
+                    <ul class="footer-links">
+                        <li><a asp-controller="Home" asp-action="Help">Помощь</a></li>
+                        <li><a asp-controller="Home" asp-action="Documentation">Документация</a></li>
+                        <li><a asp-controller="Home" asp-action="Blog">Блог</a></li>
+                        <li><a asp-controller="Home" asp-action="Contact">Контакты</a></li>
+                    </ul>
+                </div>
+
+                <!-- Legal -->
+                <div class="footer-section">
+                    <h4 class="footer-subtitle">Правовая информация</h4>
+                    <ul class="footer-links">
+                        <li><a asp-controller="Home" asp-action="Privacy">Политика конфиденциальности</a></li>
+                        <li><a asp-controller="Home" asp-action="Terms">Условия использования</a></li>
+                        <li><a asp-controller="Home" asp-action="Cookies">Cookie</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2025 NovoyaHope Forms. Все права защищены.</p>
+            </div>
         </div>
     </footer>
 
+    <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/layout.js" asp-append-version="true"></script>
 
     @RenderSection("ConstructorScripts", required: false)
-
     @await RenderSectionAsync("Scripts", required: false)
+
+    <!-- Mobile Menu Script -->
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobileMenuToggle')?.addEventListener('click', function() {
+            const menu = document.getElementById('navbarMenu');
+            menu.classList.toggle('active');
+            this.classList.toggle('active');
+        });
+
+        // User dropdown toggle
+        document.getElementById('userDropdown')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            const menu = document.getElementById('userDropdownMenu');
+            menu.classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('userDropdown');
+            const menu = document.getElementById('userDropdownMenu');
+            if (dropdown && menu && !dropdown.contains(e.target) && !menu.contains(e.target)) {
+                menu.classList.remove('show');
+            }
+        });
+    </script>
 </body>
 </html>

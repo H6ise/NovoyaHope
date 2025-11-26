@@ -54,14 +54,14 @@
                             case QuestionType.ShortText:
                                 <input type="text" class="input-line"
                                        name="Answers[@question.Id].TextAnswer"
-                                       placeholder="Мой ответ"
+                                       placeholder="Краткий ответ"
                                        @(question.IsRequired ? "required" : "")>
                                 break;
 
                             case QuestionType.ParagraphText:
                                 <textarea class="input-line"
                               name="Answers[@question.Id].TextAnswer"
-                              placeholder="Мой ответ"
+                              placeholder="Развернутый ответ"
                               rows="4"
                               @(question.IsRequired ? "required" : "")></textarea>
                                 break;
@@ -93,16 +93,24 @@
                                 }
                                 break;
 
+                            // --- Раскрывающийся список ---
+                            case QuestionType.Dropdown:
+                                <select class="dropdown-select" 
+                                        name="Answers[@question.Id].SelectedOptionIds"
+                                        @(question.IsRequired ? "required" : "")>
+                                    <option value="">Выберите вариант</option>
+                                    @foreach (var option in question.Options)
+                                    {
+                                        <option value="@option.Id">@option.Text</option>
+                                    }
+                                </select>
+                                break;
+
                             // --- Шкала (1-5) ---
                             case QuestionType.Scale:
                                 <div class="scale-wrapper">
                                     @for (int i = 1; i <= 5; i++)
                                     {
-                                        // Ищем соответствующую опцию (если они были сохранены как опции)
-                                        // Или просто используем числовое значение, если логика позволяет
-                                        // Для надежности лучше использовать ID опций, если они есть.
-                                        // Если нет, предполагаем, что сервер обработает значения 1-5.
-                                        // Здесь мы берем ID опции, соответствующей порядку i, если она существует
                                         var optionId = question.Options.FirstOrDefault(o => o.Order == i)?.Id;
 
                                         <label class="scale-item">
@@ -115,8 +123,68 @@
                                     }
                                 </div>
                                 <div class="scale-labels">
-                                    <span>Хуже</span>
-                                    <span>Лучше</span>
+                                    <span>Низкая</span>
+                                    <span>Высокая</span>
+                                </div>
+                                break;
+
+                            // --- Оценка (звезды) ---
+                            case QuestionType.Rating:
+                                <div class="rating-wrapper">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        var optionId = question.Options.FirstOrDefault(o => o.Order == i)?.Id;
+                                        <label class="star-rating-item">
+                                            <input type="radio"
+                                                   name="Answers[@question.Id].SelectedOptionIds"
+                                                   value="@(optionId ?? i)"
+                                                   @(question.IsRequired ? "required" : "")>
+                                            <span class="star-icon">⭐</span>
+                                        </label>
+                                    }
+                                </div>
+                                break;
+
+                            // --- Дата ---
+                            case QuestionType.Date:
+                                <input type="date" class="input-line date-input"
+                                       name="Answers[@question.Id].TextAnswer"
+                                       @(question.IsRequired ? "required" : "")>
+                                break;
+
+                            // --- Время ---
+                            case QuestionType.Time:
+                                <input type="time" class="input-line time-input"
+                                       name="Answers[@question.Id].TextAnswer"
+                                       @(question.IsRequired ? "required" : "")>
+                                break;
+
+                            // --- Загрузка файлов ---
+                            case QuestionType.FileUpload:
+                                <div class="file-upload-area">
+                                    <input type="file" 
+                                           id="file_@question.Id"
+                                           name="Answers[@question.Id].FileUpload"
+                                           class="file-input"
+                                           @(question.IsRequired ? "required" : "")>
+                                    <label for="file_@question.Id" class="file-label">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <span>Нажмите для выбора файла</span>
+                                    </label>
+                                </div>
+                                break;
+
+                            // --- Сетка с чекбоксами ---
+                            case QuestionType.CheckboxGrid:
+                                <div class="grid-info">
+                                    <small style="color: #5f6368;">Примечание: редактирование сеток пока в разработке</small>
+                                </div>
+                                break;
+
+                            // --- Сетка с радио-кнопками ---
+                            case QuestionType.RadioGrid:
+                                <div class="grid-info">
+                                    <small style="color: #5f6368;">Примечание: редактирование сеток пока в разработке</small>
                                 </div>
                                 break;
                         }
@@ -307,5 +375,129 @@
         font-size: 12px;
         color: #5f6368;
         margin-top: 20px;
+    }
+
+    /* Раскрывающийся список */
+    .dropdown-select {
+        width: 100%;
+        max-width: 300px;
+        padding: 10px 12px;
+        border: 1px solid #dadce0;
+        border-radius: 4px;
+        font-size: 14px;
+        background-color: white;
+        cursor: pointer;
+        transition: border-color 0.2s;
+    }
+
+        .dropdown-select:focus {
+            outline: none;
+            border-color: #2e7d32;
+            box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.1);
+        }
+
+    /* Оценка звездами */
+    .rating-wrapper {
+        display: flex;
+        gap: 8px;
+        margin: 10px 0;
+    }
+
+    .star-rating-item {
+        cursor: pointer;
+        font-size: 2rem;
+        transition: transform 0.2s;
+    }
+
+        .star-rating-item input {
+            display: none;
+        }
+
+        .star-rating-item .star-icon {
+            filter: grayscale(100%);
+            opacity: 0.5;
+            transition: all 0.2s;
+        }
+
+        .star-rating-item:hover .star-icon,
+        .star-rating-item input:checked ~ .star-icon {
+            filter: grayscale(0%);
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+    /* Дата и время */
+    .date-input, .time-input {
+        max-width: 250px;
+        padding: 8px 12px;
+        border: 1px solid #dadce0 !important;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+        .date-input:focus, .time-input:focus {
+            border-color: #2e7d32 !important;
+            box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.1);
+        }
+
+    /* Загрузка файлов */
+    .file-upload-area {
+        position: relative;
+        margin: 15px 0;
+    }
+
+    .file-input {
+        display: none;
+    }
+
+    .file-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 40px 20px;
+        border: 2px dashed #dadce0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+        background-color: #fafafa;
+    }
+
+        .file-label:hover {
+            border-color: #2e7d32;
+            background-color: #f5faf5;
+        }
+
+        .file-label i {
+            font-size: 2.5rem;
+            color: #5f6368;
+        }
+
+        .file-label span {
+            color: #5f6368;
+            font-size: 14px;
+        }
+
+        .file-label:hover i,
+        .file-label:hover span {
+            color: #2e7d32;
+        }
+
+    /* Анимации */
+    .question-card {
+        animation: slideInUp 0.3s ease-out;
+    }
+
+    @@keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 </style>

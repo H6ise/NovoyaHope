@@ -1,8 +1,263 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Создавайте опросы легко и быстро";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@section Styles {
+    <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
+}
+
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-container">
+        <div class="hero-content">
+            <div class="hero-text animate-on-scroll">
+                <h1 class="hero-title">
+                    Создавайте опросы<br />
+                    <span class="gradient-text">легко и быстро</span>
+                </h1>
+                <p class="hero-description">
+                    NovoyaHope Forms — современная платформа для создания профессиональных опросов 
+                    с мощными инструментами анализа и красивым дизайном.
+                </p>
+                <div class="hero-buttons">
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <a asp-controller="Survey" asp-action="Constructor" class="btn-hero-primary">
+                            <i class="fas fa-plus-circle"></i>
+                            Создать опрос
+                        </a>
+                        <a asp-controller="Survey" asp-action="Index" class="btn-hero-secondary">
+                            Мои опросы
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Register" class="btn-hero-primary">
+                            <i class="fas fa-rocket"></i>
+                            Начать бесплатно
+                        </a>
+                        <a asp-controller="Account" asp-action="Login" class="btn-hero-secondary">
+                            Войти
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    }
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">10,000+</div>
+                        <div class="stat-label">Опросов создано</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">50,000+</div>
+                        <div class="stat-label">Активных пользователей</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">12</div>
+                        <div class="stat-label">Типов вопросов</div>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-image animate-on-scroll">
+                <div class="hero-card card-1">
+                    <div class="card-header">
+                        <i class="fas fa-poll"></i>
+                        <span>Новый опрос</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="progress-bar"></div>
+                        <div class="card-text">Создайте опрос за минуты</div>
+                    </div>
+                </div>
+                <div class="hero-card card-2">
+                    <div class="card-chart">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="card-stats">
+                        <div class="stat">85% <span>отклик</span></div>
+                    </div>
+                </div>
+                <div class="hero-card card-3">
+                    <div class="users-list">
+                        <div class="user-avatar">👤</div>
+                        <div class="user-avatar">👥</div>
+                        <div class="user-avatar">👨</div>
+                        <div class="user-count">+250</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="hero-wave">
+        <svg viewBox="0 0 1440 120" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#ffffff" d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,960,48C1120,43,1280,53,1360,58.7L1440,64L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z"></path>
+        </svg>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section">
+    <div class="container">
+        <div class="section-header animate-on-scroll">
+            <h2 class="section-title">Мощные возможности</h2>
+            <p class="section-description">
+                Все что нужно для создания профессиональных опросов
+            </p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">
+                    <i class="fas fa-palette"></i>
+                </div>
+                <h3 class="feature-title">Красивый дизайн</h3>
+                <p class="feature-description">
+                    Современный интерфейс с плавными анимациями и адаптивным дизайном
+                </p>
+            </div>
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">
+                    <i class="fas fa-list-check"></i>
+                </div>
+                <h3 class="feature-title">12 типов вопросов</h3>
+                <p class="feature-description">
+                    От простых текстовых до сложных сеток и загрузки файлов
+                </p>
+            </div>
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+                <h3 class="feature-title">Анализ результатов</h3>
+                <p class="feature-description">
+                    Визуализация данных с графиками и детальной статистикой
+                </p>
+            </div>
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <h3 class="feature-title">Адаптивность</h3>
+                <p class="feature-description">
+                    Работает на всех устройствах: от смартфонов до планшетов
+                </p>
+            </div>
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <h3 class="feature-title">Быстрая работа</h3>
+                <p class="feature-description">
+                    Оптимизированная производительность и мгновенная загрузка
+                </p>
+            </div>
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3 class="feature-title">Безопасность</h3>
+                <p class="feature-description">
+                    Защита данных и конфиденциальность ответов пользователей
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="how-it-works-section">
+    <div class="container">
+        <div class="section-header animate-on-scroll">
+            <h2 class="section-title">Как это работает</h2>
+            <p class="section-description">
+                Создайте свой первый опрос за 3 простых шага
+            </p>
+        </div>
+        <div class="steps-container">
+            <div class="step-item animate-on-scroll">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3 class="step-title">Создайте опрос</h3>
+                    <p class="step-description">
+                        Выберите из шаблонов или создайте с нуля. Добавьте вопросы нужных типов.
+                    </p>
+                </div>
+                <div class="step-icon">
+                    <i class="fas fa-edit"></i>
+                </div>
+            </div>
+            <div class="step-arrow">
+                <i class="fas fa-arrow-down"></i>
+            </div>
+            <div class="step-item animate-on-scroll">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3 class="step-title">Поделитесь ссылкой</h3>
+                    <p class="step-description">
+                        Опубликуйте опрос и отправьте ссылку респондентам любым удобным способом.
+                    </p>
+                </div>
+                <div class="step-icon">
+                    <i class="fas fa-share-alt"></i>
+                </div>
+            </div>
+            <div class="step-arrow">
+                <i class="fas fa-arrow-down"></i>
+            </div>
+            <div class="step-item animate-on-scroll">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3 class="step-title">Анализируйте результаты</h3>
+                    <p class="step-description">
+                        Просматривайте ответы в реальном времени с красивой визуализацией.
+                    </p>
+                </div>
+                <div class="step-icon">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="container">
+        <div class="cta-content animate-on-scroll">
+            <h2 class="cta-title">Готовы начать?</h2>
+            <p class="cta-description">
+                Присоединяйтесь к тысячам пользователей, которые уже создают опросы с NovoyaHope Forms
+            </p>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a asp-controller="Survey" asp-action="Constructor" class="btn-cta">
+                    <i class="fas fa-plus-circle"></i>
+                    Создать первый опрос
+                </a>
+            }
+            else
+            {
+                <a asp-controller="Account" asp-action="Register" class="btn-cta">
+                    <i class="fas fa-rocket"></i>
+                    Начать бесплатно
+                </a>
+            }
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        // Additional animations for home page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate hero cards
+            setTimeout(() => {
+                document.querySelectorAll('.hero-card').forEach((card, index) => {
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, index * 200);
+                });
+            }, 500);
+        });
+    </script>
+}

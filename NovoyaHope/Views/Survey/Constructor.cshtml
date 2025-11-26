@@ -88,8 +88,16 @@
                                             onchange="changeQuestionType(this, @question.Id)">
                                         <option value="SingleChoice" selected="@(question.Type == QuestionType.SingleChoice)">Один из списка</option>
                                         <option value="MultipleChoice" selected="@(question.Type == QuestionType.MultipleChoice)">Несколько из списка</option>
+                                        <option value="Dropdown" selected="@(question.Type == QuestionType.Dropdown)">Раскрывающийся список</option>
                                         <option value="ShortText" selected="@(question.Type == QuestionType.ShortText)">Текст (строка)</option>
                                         <option value="ParagraphText" selected="@(question.Type == QuestionType.ParagraphText)">Текст (абзац)</option>
+                                        <option value="FileUpload" selected="@(question.Type == QuestionType.FileUpload)">Загрузка файлов</option>
+                                        <option value="Scale" selected="@(question.Type == QuestionType.Scale)">Шкала</option>
+                                        <option value="Rating" selected="@(question.Type == QuestionType.Rating)">Оценка ⭐</option>
+                                        <option value="CheckboxGrid" selected="@(question.Type == QuestionType.CheckboxGrid)">Сетка (множественный выбор)</option>
+                                        <option value="RadioGrid" selected="@(question.Type == QuestionType.RadioGrid)">Сетка флажков</option>
+                                        <option value="Date" selected="@(question.Type == QuestionType.Date)">Дата</option>
+                                        <option value="Time" selected="@(question.Type == QuestionType.Time)">Время</option>
                                     </select>
                                 </div>
                                 <div class="question-body options-container" data-question-id="@question.Id">
