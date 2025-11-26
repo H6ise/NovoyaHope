@@ -9,19 +9,19 @@
 
 body {
     font-family: 'Roboto', 'Helvetica', Arial, sans-serif;
-    background-color: #f0f2f5;
+    background-color: #f7faf7; /* very light green/white */
     color: #202124;
     line-height: 1.5;
 }
 
 a {
-    color: #673ab7; /* Фиолетовый акцент */
+    color: #137333; /* Зеленый акцент */
     text-decoration: none;
-    transition: color 0.2s;
+    transition: color 0.15s;
 }
 
     a:hover {
-        color: #5d31a5;
+        color: #0f5a29;
     }
 
 /* ====================================
@@ -38,9 +38,17 @@ a {
 /* Верхняя шапка (Header) */
 .main-header {
     background-color: #ffffff;
-    border-bottom: 1px solid #dadce0;
+    border-bottom: 1px solid #e6f0ea;
     padding: 10px 0;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* Header variant used in new layout */
+.header {
+    background-color: #ffffff;
+    border-bottom: 1px solid #e6f0ea;
+    padding: 10px 0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
 
 .header-content {
@@ -50,9 +58,9 @@ a {
 }
 
 .logo a {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     font-weight: 700;
-    color: #673ab7;
+    color: #137333;
 }
 
 /* Навигация (Login/Logout, Survey List) */
@@ -74,18 +82,18 @@ a {
    3. КНОПКИ И ФОРМЫ
    ==================================== */
 .btn-primary {
-    background-color: #673ab7;
+    background-color: #137333;
     color: white;
     border: none;
     padding: 10px 20px;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     font-weight: 500;
-    transition: background-color 0.2s;
+    transition: background-color 0.15s;
 }
 
     .btn-primary:hover {
-        background-color: #5d31a5;
+        background-color: #0f5a29;
     }
 
 /* Формы (Login/Register) */
@@ -122,3 +130,140 @@ a {
     font-size: 0.85rem;
     margin-top: 5px;
 }
+/* ====================================
+   7. MAIN CONTENT LAYOUT (РАБОЧАЯ ОБЛАСТЬ)
+   ==================================== */
+.main-content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding: 0 20px;
+}
+
+    .main-content-header h2 {
+        font-size: 1.3rem;
+        font-weight: 500;
+        color: #202124;
+    }
+
+/* ====================================
+   8. SURVEY CARDS GRID (СЕТКА ОПРОСОВ)
+   ==================================== */
+
+.cards-container {
+    padding: 0 20px;
+}
+
+.cards-grid {
+    /* Адаптивная сетка: 20px между элементами, колонки от 220px до 1fr */
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.survey-card, .card-create {
+    background-color: #ffffff;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    transition: box-shadow 0.2s, border-color 0.2s;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    height: 250px;
+    text-decoration: none;
+    color: inherit;
+}
+
+    /* Эффект при наведении */
+    .survey-card:hover, .card-create:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-color: #cdecd9; /* light green border on hover */
+    }
+
+/* Карточка создания нового опроса */
+.card-create {
+    border-style: dashed;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.card-create-content {
+    text-align: center;
+    color: #5f6368;
+}
+
+    .card-create-content .create-icon {
+        font-size: 3rem;
+        color: #137333;
+        margin-bottom: 10px;
+    }
+
+    .card-create-content span {
+        font-weight: 500;
+    }
+
+/* Стиль карточек существующих опросов */
+.survey-preview {
+    height: 120px;
+    background-color: #e8f8ee; /* Светло-зеленое превью */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.survey-info {
+    padding: 15px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.survey-title-card {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #202124;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 5px;
+}
+
+.survey-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    font-size: 0.8rem;
+    color: #5f6368;
+}
+
+.meta-status-draft {
+    color: #d93025; /* Красный для черновика */
+}
+
+.meta-status-published {
+    color: #137333; /* Зеленый для опубликованного */
+}
+
+/* Кнопки действий (иконки) */
+.card-actions {
+    display: flex;
+    gap: 10px;
+}
+
+    .card-actions a {
+        color: #5f6368;
+        padding: 5px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+
+        .card-actions a:hover {
+            background-color: #f1f3f4;
+        }

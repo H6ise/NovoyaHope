@@ -1,52 +1,100 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Identity
+@using NovoyaHope.Models.DataModels
+@inject SignInManager<ApplicationUser> SignInManager 
+@inject UserManager<ApplicationUser> UserManager 
+
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - NovoyaHope</title>
 
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 
-    @RenderSection("ConstructorStyles", required: false)
+    @if (IsSectionDefined("ConstructorStyles"))
+    {
+        <link rel="stylesheet" href="~/css/constructor.css" asp-append-version="true" />
+    }
 </head>
 <body>
-    <header class="main-header">
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">
-                    <a asp-area="" asp-controller="Home" asp-action="Index">NovoyaHope</a>
-                </div>
+    <header class="header">
+        <div class="header-container">
+            <button class="burger-menu" aria-label="Открыть меню" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+            <a class="logo" asp-controller="Survey" asp-action="Index">
+                <span>NovoyaHope Forms</span>
+            </a>
 
-                <nav>
-                    <ul class="nav-links">
-                        @if (User.Identity.IsAuthenticated)
-                        {
-                            <li>
-                                <a asp-controller="Survey" asp-action="Index">Мои опросы</a>
-                            </li>
-                        }
+            <form class="search-bar" onsubmit="return false;">
+                <input type="search" placeholder="Поиск..." oninput="searchPolls(this.value)" />
+                <i class="fas fa-search search-icon"></i>
+            </form>
 
-                        <partial name="_LoginPartial" />
-                    </ul>
-                </nav>
+            <div class="header-right">
+                <i class="fas fa-th header-icon" title="Приложения"></i>
+                <i class="fas fa-question-circle header-icon" title="Помощь"></i>
+                <i class="fas fa-cog header-icon" title="Настройки"></i>
+                <img src="/images/avatar.png" class="avatar" alt="Аватар" onclick="toggleProfileModal()" />
             </div>
         </div>
     </header>
 
-    <main role="main" class="pb-3">
+    <div class="sidebar" id="sidebar">
+        <button class="close-btn" aria-label="Закрыть меню" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
+        <ul>
+            <li><a asp-controller="Survey" asp-action="Index"><i class="fas fa-poll green-icon"></i> **Формы**</a></li>
+            <li><a href="#"><i class="fas fa-file-alt"></i> Документы</a></li>
+            <li><a href="#"><i class="fas fa-table"></i> Таблицы</a></li>
+            <li><a href="#"><i class="fas fa-file-powerpoint"></i> Презентации</a></li>
+        </ul>
+        <div class="sidebar-separator"></div>
+        <h4>Недавние формы</h4>
+        <ul class="recent-forms-list">
+            <li><a href="#">Название_Формы_1</a></li>
+            <li><a href="#">Заявка на отпуск</a></li>
+            <li><a href="#">Опрос по проекту А</a></li>
+        </ul>
+    </div>
+
+    <div class="profile-modal" id="profileModal">
+        @if (SignInManager.IsSignedIn(User))
+        {
+            var user = await UserManager.GetUserAsync(User);
+            <div class="profile-content">
+                <img src="/images/avatar.png" class="profile-avatar" alt="Avatar">
+                <h3>@(user?.UserName ?? "Пользователь")</h3>
+                <p>@(user?.Email ?? "Email не указан")</p>
+
+                <form asp-controller="Account" asp-action="Logout" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="profile-btn signout-btn">Выйти</button>
+                </form>
+            </div>
+        }
+        else
+        {
+            <div class="profile-content">
+                <img src="/images/avatar.png" class="profile-avatar" alt="Default Avatar">
+                <p>Вы не авторизованы.</p>
+                <a asp-controller="Account" asp-action="Login" class="profile-btn login-btn">Авторизоваться</a>
+                <a asp-controller="Account" asp-action="Register" class="profile-btn register-btn">Зарегистрироваться</a>
+            </div>
+        }
+    </div>
+
+    <main class="main-content" id="main-content">
         @RenderBody()
     </main>
 
-    <footer class="border-top footer text-muted mt-5">
-        <div class="container text-center">
-            &copy; 2025 - NovoyaHope
-        </div>
-    </footer>
-
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
-    @RenderSection("ConstructorScripts", required: false)
+    @if (IsSectionDefined("ConstructorScripts"))
+    {
+        <script src="~/js/constructor.js" asp-append-version="true"></script>
+    }
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>
