@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
+using System.Collections.Generic;
+using System;
 
 namespace NovoyaHope.Controllers
 {
@@ -64,30 +66,189 @@ namespace NovoyaHope.Controllers
         // POST /public/submitresponse
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SubmitResponse(SubmitResponseViewModel model)
+        public async Task<IActionResult> SubmitResponse(int SurveyId, IFormCollection form)
         {
-            // ... (Логика обработки ответов из предыдущего шага) ...
+            // Создаем модель из параметров формы
+            var model = new SubmitResponseViewModel
+            {
+                SurveyId = SurveyId,
+                Answers = new Dictionary<int, UserResponseData>()
+            };
+
+            // Обрабатываем данные формы вручную
+            // Группируем по вопросам
+            var questionGroups = form.Keys
+                .Where(k => k.StartsWith("Answers[") && k.Contains("]"))
+                .GroupBy(k =>
+                {
+                    var startIndex = k.IndexOf('[') + 1;
+                    var endIndex = k.IndexOf(']');
+                    if (startIndex > 0 && endIndex > startIndex)
+                    {
+                        if (int.TryParse(k.Substring(startIndex, endIndex - startIndex), out int qId))
+                            return qId;
+                    }
+                    return -1;
+                })
+                .Where(g => g.Key > 0);
+
+            foreach (var group in questionGroups)
+            {
+                var questionId = group.Key;
+                var answerData = new UserResponseData
+                {
+                    SelectedOptionIds = new List<int>()
+                };
+
+                foreach (var key in group)
+                {
+                    var fieldName = key.Substring(key.IndexOf(']') + 2); // После "].TextAnswer" или "].SelectedOptionIds"
+                    
+                    if (fieldName == "TextAnswer")
+                    {
+                        answerData.TextAnswer = form[key].ToString();
+                    }
+                    else if (fieldName == "SelectedOptionIds")
+                    {
+                        // Для чекбоксов и радио - получаем все значения
+                        var values = form[key];
+                        foreach (var value in values)
+                        {
+                            if (int.TryParse(value, out int optionId))
+                            {
+                                answerData.SelectedOptionIds.Add(optionId);
+                            }
+                        }
+                    }
+                }
+
+                model.Answers[questionId] = answerData;
+            }
 
             // 1. Проверка существования и статуса опроса
-            var survey = await _context.Surveys.FindAsync(model.SurveyId);
+            var survey = await _context.Surveys
+                .Include(s => s.Questions)
+                    .ThenInclude(q => q.AnswerOptions)
+                .FirstOrDefaultAsync(s => s.Id == model.SurveyId);
 
-            if (survey == null || !survey.IsPublished) return NotFound();
+            if (survey == null || !survey.IsPublished) 
+            {
+                return NotFound("Опрос не найден или не опубликован.");
+            }
 
-            // 2. Создание записи SurveyResponse
+            // 2. Получение ID пользователя (если не анонимный)
+            string userId = null;
+            if (!survey.IsAnonymous && User.Identity.IsAuthenticated)
+            {
+                userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            }
+
+            // 3. Создание записи SurveyResponse
             var responseEntry = new SurveyResponse
             {
                 SurveyId = model.SurveyId,
                 SubmissionDate = DateTime.UtcNow,
-                UserId = survey.IsAnonymous ? null : User.FindFirstValue(ClaimTypes.NameIdentifier),
+                UserId = userId,
                 UserAnswers = new List<UserAnswer>()
             };
 
-            // 3. Обработка всех ответов и сохранение...
+            // 4. Обработка всех ответов
+            if (model.Answers != null)
+            {
+                foreach (var answerPair in model.Answers)
+                {
+                    var questionId = answerPair.Key;
+                    var answerData = answerPair.Value;
 
-            _context.SurveyResponses.Add(responseEntry);
-            await _context.SaveChangesAsync();
+                    var question = survey.Questions.FirstOrDefault(q => q.Id == questionId);
+                    if (question == null) continue;
 
-            return RedirectToAction(nameof(ThankYou));
+                    // Проверка обязательных вопросов
+                    if (question.IsRequired)
+                    {
+                        bool hasAnswer = false;
+                        if (question.Type == QuestionType.ShortText || question.Type == QuestionType.ParagraphText)
+                        {
+                            hasAnswer = !string.IsNullOrWhiteSpace(answerData.TextAnswer);
+                        }
+                        else
+                        {
+                            hasAnswer = answerData.SelectedOptionIds != null && answerData.SelectedOptionIds.Any();
+                        }
+
+                        if (!hasAnswer)
+                        {
+                            ModelState.AddModelError($"Answers[{questionId}]", $"Вопрос '{question.Text}' обязателен для заполнения.");
+                            continue;
+                        }
+                    }
+
+                    // Обработка текстовых ответов
+                    if (question.Type == QuestionType.ShortText || question.Type == QuestionType.ParagraphText)
+                    {
+                        if (!string.IsNullOrWhiteSpace(answerData.TextAnswer))
+                        {
+                            var userAnswer = new UserAnswer
+                            {
+                                QuestionId = questionId,
+                                TextAnswer = answerData.TextAnswer.Trim()
+                            };
+                            responseEntry.UserAnswers.Add(userAnswer);
+                        }
+                    }
+                    // Обработка одиночного выбора (Radio) или шкалы
+                    else if (question.Type == QuestionType.SingleChoice || question.Type == QuestionType.Scale)
+                    {
+                        if (answerData.SelectedOptionIds != null && answerData.SelectedOptionIds.Any())
+                        {
+                            var selectedOptionId = answerData.SelectedOptionIds.First();
+                            // Проверка, что опция принадлежит этому вопросу
+                            if (question.AnswerOptions.Any(o => o.Id == selectedOptionId))
+                            {
+                                var userAnswer = new UserAnswer
+                                {
+                                    QuestionId = questionId,
+                                    SelectedOptionId = selectedOptionId
+                                };
+                                responseEntry.UserAnswers.Add(userAnswer);
+                            }
+                        }
+                    }
+                    // Обработка множественного выбора (Checkbox)
+                    else if (question.Type == QuestionType.MultipleChoice)
+                    {
+                        if (answerData.SelectedOptionIds != null && answerData.SelectedOptionIds.Any())
+                        {
+                            foreach (var optionId in answerData.SelectedOptionIds)
+                            {
+                                // Проверка, что опция принадлежит этому вопросу
+                                if (question.AnswerOptions.Any(o => o.Id == optionId))
+                                {
+                                    var userAnswer = new UserAnswer
+                                    {
+                                        QuestionId = questionId,
+                                        SelectedOptionId = optionId
+                                    };
+                                    responseEntry.UserAnswers.Add(userAnswer);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 5. Сохранение ответа
+            if (ModelState.IsValid)
+            {
+                _context.SurveyResponses.Add(responseEntry);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(ThankYou));
+            }
+            else
+            {
+                // Если есть ошибки валидации, возвращаем к форме
+                return RedirectToAction(nameof(ViewSurvey), new { id = model.SurveyId });
+            }
         }
 
         public IActionResult ThankYou()

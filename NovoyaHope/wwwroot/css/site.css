@@ -1,5 +1,5 @@
 /* ====================================
-   1. СБРОС И БАЗОВАЯ ТИПОГРАФИКА
+   1. РћР‘Р©РР• РЎРўРР›Р Р РЎР‘Р РћРЎ
    ==================================== */
 * {
     box-sizing: border-box;
@@ -7,25 +7,40 @@
     padding: 0;
 }
 
+:root {
+    --primary-green: #2e7d32;
+    --primary-green-dark: #1b5e20;
+    --primary-green-light: #4caf50;
+    --primary-green-lighter: #81c784;
+    --primary-green-lightest: #c8e6c9;
+    --bg-white: #ffffff;
+    --bg-light: #f5faf5;
+    --bg-lighter: #f1f8f4;
+    --text-dark: #1a1a1a;
+    --text-gray: #5f6368;
+    --border-color: #e0e0e0;
+    --shadow: rgba(46, 125, 50, 0.1);
+}
+
 body {
-    font-family: 'Roboto', 'Helvetica', Arial, sans-serif;
-    background-color: #f0f2f5;
-    color: #202124;
-    line-height: 1.5;
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica', Arial, sans-serif;
+    background-color: var(--bg-light);
+    color: var(--text-dark);
+    line-height: 1.6;
 }
 
 a {
-    color: #673ab7; /* Фиолетовый акцент */
+    color: var(--primary-green);
     text-decoration: none;
-    transition: color 0.2s;
+    transition: color 0.2s, background-color 0.2s;
 }
 
     a:hover {
-        color: #5d31a5;
+        color: var(--primary-green-dark);
     }
 
 /* ====================================
-   2. ЛЭЙАУТ И НАВИГАЦИЯ
+   2. пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
    ==================================== */
 .container {
     padding-right: 15px;
@@ -35,12 +50,12 @@ a {
     max-width: 1200px;
 }
 
-/* Верхняя шапка (Header) */
+/* Р“Р»Р°РІРЅС‹Р№ С…РµРґРµСЂ (Header) */
 .main-header {
-    background-color: #ffffff;
-    border-bottom: 1px solid #dadce0;
-    padding: 10px 0;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    background-color: var(--bg-white);
+    border-bottom: 2px solid var(--primary-green-lightest);
+    padding: 15px 0;
+    box-shadow: 0 2px 8px var(--shadow);
 }
 
 .header-content {
@@ -50,88 +65,129 @@ a {
 }
 
 .logo a {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 700;
-    color: #673ab7;
+    color: var(--primary-green);
+    letter-spacing: -0.5px;
 }
 
-/* Навигация (Login/Logout, Survey List) */
+    .logo a:hover {
+        color: var(--primary-green-dark);
+    }
+
+/* РќР°РІРёРіР°С†РёСЏ (Login/Logout, Survey List) */
 .nav-links {
     list-style: none;
     display: flex;
-    gap: 20px;
+    gap: 15px;
     align-items: center;
 }
 
     .nav-links a {
-        padding: 5px 10px;
-        border-radius: 4px;
+        padding: 8px 16px;
+        border-radius: 6px;
         font-size: 0.95rem;
         font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .nav-links a:hover {
+        background-color: var(--bg-lighter);
+        color: var(--primary-green-dark);
     }
 
 /* ====================================
-   3. КНОПКИ И ФОРМЫ
+   3. РљРќРћРџРљР Р Р¤РћР РњР«
    ==================================== */
 .btn-primary {
-    background-color: #673ab7;
+    background-color: var(--primary-green);
     color: white;
     border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
+    padding: 12px 24px;
+    border-radius: 8px;
     cursor: pointer;
-    font-weight: 500;
-    transition: background-color 0.2s;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px var(--shadow);
 }
 
     .btn-primary:hover {
-        background-color: #5d31a5;
+        background-color: var(--primary-green-dark);
+        box-shadow: 0 4px 8px var(--shadow);
+        transform: translateY(-1px);
     }
 
-/* Формы (Login/Register) */
+.btn-secondary {
+    background-color: var(--bg-white);
+    color: var(--primary-green);
+    border: 2px solid var(--primary-green-lightest);
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+    .btn-secondary:hover {
+        background-color: var(--bg-lighter);
+        border-color: var(--primary-green-light);
+    }
+
+/* Р¤РѕСЂРјС‹ (Login/Register) */
 .auth-container {
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 80vh;
+    background: linear-gradient(135deg, var(--bg-light) 0%, var(--bg-lighter) 100%);
 }
 
 .auth-card {
-    background-color: #ffffff;
-    padding: 40px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    background-color: var(--bg-white);
+    padding: 48px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px var(--shadow);
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
+    border-top: 4px solid var(--primary-green);
 }
 
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 .form-control {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #dadce0;
-    border-radius: 4px;
+    padding: 12px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
     font-size: 1rem;
+    transition: all 0.2s;
+    background-color: var(--bg-white);
 }
 
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-green-light);
+        box-shadow: 0 0 0 3px var(--primary-green-lightest);
+    }
+
 .validation-summary-errors, .field-validation-error {
-    color: #d93025;
+    color: #d32f2f;
     font-size: 0.85rem;
     margin-top: 5px;
 }
 
-/* Вставить в раздел 4. Стили КОНСТРУКТОРА */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ 4. пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 
-/* Активный блок вопроса */
+/* РђРєС‚РёРІРЅРѕРµ СЃРѕСЃС‚РѕСЏРЅРёРµ РІРѕРїСЂРѕСЃР° */
 .question-block.active {
-    border-left: 7px solid var(--primary-color) !important;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    border-left: 7px solid var(--primary-green) !important;
+    box-shadow: 0 4px 12px var(--shadow);
 }
 
-/* Структура вопроса */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 .question-block .question-header {
     display: flex;
     justify-content: space-between;
@@ -150,13 +206,19 @@ a {
 
 .question-type-select {
     width: 220px;
-    padding: 8px;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    background-color: #f8f9fa;
+    padding: 10px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-white);
+    transition: all 0.2s;
 }
 
-/* Варианты ответа */
+    .question-type-select:focus {
+        border-color: var(--primary-green-light);
+        outline: none;
+    }
+
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ */
 .option-item {
     display: flex;
     align-items: center;
@@ -186,16 +248,21 @@ a {
 }
 
 .add-option-link {
-    color: #1a73e8;
+    color: var(--primary-green);
     margin-left: 5px;
+    font-weight: 500;
 }
+
+    .add-option-link:hover {
+        color: var(--primary-green-dark);
+    }
 
 .delete-option-btn {
     font-size: 0.8rem;
     opacity: 0.7;
 }
 
-/* Футер вопроса */
+/* пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 .question-footer {
     display: flex;
     justify-content: flex-end;
@@ -215,7 +282,15 @@ a {
 
 .required-label {
     font-size: 0.9rem;
-    color: var(--gray-text);
+    color: var(--text-gray);
     display: flex;
     align-items: center;
+}
+
+footer {
+    background-color: var(--bg-white);
+    border-top: 2px solid var(--primary-green-lightest);
+    padding: 30px 0;
+    margin-top: 60px;
+    color: var(--text-gray);
 }

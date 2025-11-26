@@ -103,6 +103,7 @@ namespace NovoyaHope.Controllers
 
         // POST /survey/publish/1
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Publish(int id)
         {
             var survey = await _context.Surveys.FindAsync(id);
@@ -121,7 +122,119 @@ namespace NovoyaHope.Controllers
             survey.IsPublished = true;
             await _context.SaveChangesAsync();
 
-            return Ok(new { success = true, message = "Опросник успешно опубликован!" });
+            return Ok(new { success = true, message = "Опросник успешно опубликован!", publicUrl = Url.Action("ViewSurvey", "Public", new { id = id }, Request.Scheme) });
+        }
+
+        // GET /survey/results/1
+        public async Task<IActionResult> Results(int id)
+        {
+            var userId = _userManager.GetUserId(User);
+            var survey = await _context.Surveys
+                .Include(s => s.Questions.OrderBy(q => q.Order))
+                    .ThenInclude(q => q.AnswerOptions.OrderBy(o => o.Order))
+                .Include(s => s.Responses)
+                    .ThenInclude(r => r.UserAnswers)
+                        .ThenInclude(ua => ua.SelectedOption)
+                .FirstOrDefaultAsync(s => s.Id == id && s.CreatorId == userId);
+
+            if (survey == null)
+            {
+                return NotFound();
+            }
+
+            var viewModel = new SurveyResultsViewModel
+            {
+                SurveyId = survey.Id,
+                SurveyTitle = survey.Title,
+                TotalResponses = survey.Responses?.Count ?? 0,
+                CreationDate = survey.CreatedDate,
+                QuestionResults = new List<QuestionResultViewModel>()
+            };
+
+            // Обработка результатов по каждому вопросу
+            foreach (var question in survey.Questions ?? new List<Question>())
+            {
+                var questionResult = new QuestionResultViewModel
+                {
+                    QuestionId = question.Id,
+                    Text = question.Text,
+                    Type = question.Type,
+                    OptionCounts = new Dictionary<int, int>(),
+                    OptionTexts = new Dictionary<int, string>(),
+                    TextAnswers = new List<string>(),
+                    AverageScore = 0
+                };
+
+                // Получаем все ответы на этот вопрос
+                var answersForQuestion = survey.Responses?
+                    .SelectMany(r => r.UserAnswers ?? new List<UserAnswer>())
+                    .Where(ua => ua.QuestionId == question.Id)
+                    .ToList() ?? new List<UserAnswer>();
+
+                if (question.Type == QuestionType.ShortText || question.Type == QuestionType.ParagraphText)
+                {
+                    // Текстовые ответы
+                    questionResult.TextAnswers = answersForQuestion
+                        .Where(a => !string.IsNullOrWhiteSpace(a.TextAnswer))
+                        .Select(a => a.TextAnswer)
+                        .ToList();
+                }
+                else if (question.Type == QuestionType.SingleChoice || question.Type == QuestionType.MultipleChoice)
+                {
+                    // Ответы с выбором вариантов
+                    foreach (var option in question.AnswerOptions ?? new List<AnswerOption>())
+                    {
+                        questionResult.OptionTexts[option.Id] = option.Text;
+                        questionResult.OptionCounts[option.Id] = answersForQuestion
+                            .Count(a => a.SelectedOptionId == option.Id);
+                    }
+                }
+                else if (question.Type == QuestionType.Scale)
+                {
+                    // Шкала - считаем среднее значение
+                    var scaleAnswers = answersForQuestion
+                        .Where(a => a.SelectedOptionId.HasValue)
+                        .Select(a => a.SelectedOption?.Order ?? 0)
+                        .Where(order => order > 0)
+                        .ToList();
+
+                    if (scaleAnswers.Any())
+                    {
+                        questionResult.AverageScore = scaleAnswers.Average();
+                    }
+
+                    // Также показываем распределение по опциям
+                    foreach (var option in question.AnswerOptions ?? new List<AnswerOption>())
+                    {
+                        questionResult.OptionTexts[option.Id] = option.Text;
+                        questionResult.OptionCounts[option.Id] = answersForQuestion
+                            .Count(a => a.SelectedOptionId == option.Id);
+                    }
+                }
+
+                viewModel.QuestionResults.Add(questionResult);
+            }
+
+            return View("Results", viewModel);
+        }
+
+        // POST /survey/unpublish/1
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Unpublish(int id)
+        {
+            var survey = await _context.Surveys.FindAsync(id);
+            var userId = _userManager.GetUserId(User);
+
+            if (survey == null || survey.CreatorId != userId)
+            {
+                return Forbid();
+            }
+
+            survey.IsPublished = false;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true, message = "Опросник снят с публикации." });
         }
     }
 }

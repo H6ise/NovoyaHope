@@ -1,0 +1,135 @@
+@model NovoyaHope.Models.ViewModels.SurveyResultsViewModel
+@using NovoyaHope.Models
+@using System.Linq
+
+@{
+    ViewData["Title"] = "Результаты: " + Model.SurveyTitle;
+    Layout = "_Layout";
+}
+
+<div class="container mt-4">
+    <div class="results-header" style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(46, 125, 50, 0.1); margin-bottom: 30px; border-top: 4px solid #2e7d32;">
+        <h1 style="color: #2e7d32; margin-bottom: 10px; font-weight: 600;">@Model.SurveyTitle</h1>
+        <div style="display: flex; gap: 30px; color: #5f6368; margin-top: 15px;">
+            <div>
+                <strong style="color: #2e7d32;">@Model.TotalResponses</strong> ответов
+            </div>
+            <div>
+                Создано: @Model.CreationDate.ToString("dd.MM.yyyy")
+            </div>
+            <div>
+                <a asp-controller="Public" asp-action="ViewSurvey" asp-route-id="@Model.SurveyId" target="_blank" 
+                   style="color: #2e7d32; text-decoration: underline;">🔗 Открыть опрос</a>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.TotalResponses == 0)
+    {
+        <div style="background: white; padding: 60px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(46, 125, 50, 0.1);">
+            <div style="font-size: 4rem; margin-bottom: 20px;">📊</div>
+            <h3 style="color: #5f6368; margin-bottom: 10px;">Пока нет ответов</h3>
+            <p style="color: #5f6368;">Когда пользователи начнут проходить ваш опрос, результаты появятся здесь.</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var questionResult in Model.QuestionResults)
+        {
+            <div class="question-result-card" style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(46, 125, 50, 0.1); margin-bottom: 25px;">
+                <h3 style="color: #1a1a1a; margin-bottom: 20px; font-weight: 600; font-size: 1.2rem;">
+                    @questionResult.Text
+                </h3>
+
+                @if (questionResult.Type == QuestionType.ShortText || questionResult.Type == QuestionType.ParagraphText)
+                {
+                    <!-- Текстовые ответы -->
+                    <div class="text-answers">
+                        @if (questionResult.TextAnswers != null && questionResult.TextAnswers.Any())
+                        {
+                            <div style="max-height: 400px; overflow-y: auto;">
+                            @foreach (var textAnswer in questionResult.TextAnswers)
+                            {
+                                <div style="padding: 12px; margin-bottom: 10px; background: #f5faf5; border-left: 3px solid #4caf50; border-radius: 6px;">
+                                    @textAnswer
+                                </div>
+                            }
+                            </div>
+                        }
+                        else
+                        {
+                            <p style="color: #5f6368; font-style: italic;">Нет ответов</p>
+                        }
+                    </div>
+                }
+                else if (questionResult.Type == QuestionType.SingleChoice || questionResult.Type == QuestionType.MultipleChoice)
+                {
+                    <!-- Ответы с выбором вариантов -->
+                    <div class="choice-results">
+                        @if (questionResult.OptionTexts != null && questionResult.OptionTexts.Any())
+                        {
+                            var totalVotes = questionResult.OptionCounts.Values.Sum();
+                            @foreach (var option in questionResult.OptionTexts)
+                            {
+                                var count = questionResult.OptionCounts.ContainsKey(option.Key) ? questionResult.OptionCounts[option.Key] : 0;
+                                var percentage = totalVotes > 0 ? (count * 100.0 / totalVotes) : 0;
+                                
+                                <div style="margin-bottom: 20px;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                        <span style="font-weight: 500; color: #1a1a1a;">@option.Value</span>
+                                        <span style="color: #2e7d32; font-weight: 600;">@count (@percentage.ToString("F1"))%</span>
+                                    </div>
+                                    <div style="background: #e0e0e0; border-radius: 8px; height: 30px; overflow: hidden; position: relative;">
+                                        <div style="background: linear-gradient(90deg, #4caf50 0%, #81c784 100%); height: 100%; width: @percentage%; transition: width 0.5s; border-radius: 8px;"></div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+                else if (questionResult.Type == QuestionType.Scale)
+                {
+                    <!-- Шкала -->
+                    <div class="scale-results">
+                        <div style="background: #f5faf5; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                            <div style="font-size: 2rem; color: #2e7d32; font-weight: 700;">@questionResult.AverageScore.ToString("F2")</div>
+                            <div style="color: #5f6368; margin-top: 5px;">Средний балл</div>
+                        </div>
+                        
+                        @if (questionResult.OptionTexts != null && questionResult.OptionTexts.Any())
+                        {
+                            var totalVotes = questionResult.OptionCounts.Values.Sum();
+                            @foreach (var option in questionResult.OptionTexts.OrderBy(o => o.Value))
+                            {
+                                var count = questionResult.OptionCounts.ContainsKey(option.Key) ? questionResult.OptionCounts[option.Key] : 0;
+                                var percentage = totalVotes > 0 ? (count * 100.0 / totalVotes) : 0;
+                                
+                                <div style="margin-bottom: 15px;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                        <span style="font-weight: 500; color: #1a1a1a;">@option.Value</span>
+                                        <span style="color: #2e7d32; font-weight: 600;">@count</span>
+                                    </div>
+                                    <div style="background: #e0e0e0; border-radius: 6px; height: 24px; overflow: hidden;">
+                                        <div style="background: linear-gradient(90deg, #4caf50 0%, #81c784 100%); height: 100%; width: @percentage%; transition: width 0.5s; border-radius: 6px;"></div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+<style>
+    .question-result-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .question-result-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15) !important;
+    }
+</style>
+

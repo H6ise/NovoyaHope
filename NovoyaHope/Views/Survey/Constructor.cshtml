@@ -34,9 +34,22 @@
 
                 <div class="header-right">
                     <button type="submit" class="btn-secondary" style="margin-right: 10px;">Сохранить</button>
-                    <button type="button" onclick="publishSurvey(@Model.Survey.Id)" class="btn-primary" style="background-color: #1a73e8;">
-                        @(Model.Survey.IsPublished ? "Опубликовано" : "Опубликовать")
-                    </button>
+                    @if (Model.Survey.IsPublished)
+                    {
+                        <a asp-controller="Public" asp-action="ViewSurvey" asp-route-id="@Model.Survey.Id" target="_blank" 
+                           class="btn-secondary" style="margin-right: 10px; text-decoration: none; display: inline-block;">🔗 Открыть</a>
+                        <a asp-action="Results" asp-route-id="@Model.Survey.Id" 
+                           class="btn-secondary" style="margin-right: 10px; text-decoration: none; display: inline-block;">📊 Результаты</a>
+                        <button type="button" onclick="unpublishSurvey(@Model.Survey.Id)" class="btn-secondary" style="background-color: #f5faf5; color: #2e7d32;">
+                            Снять с публикации
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" onclick="publishSurvey(@Model.Survey.Id)" class="btn-primary" style="background-color: #2e7d32;">
+                            Опубликовать
+                        </button>
+                    }
                 </div>
             </div>
         </div>
@@ -153,12 +166,56 @@
 
             // JS-функция для публикации
             function publishSurvey(surveyId) {
-                 if (confirm('Опубликовать эту форму? Она станет доступна по ссылке.')) {
-                    // Здесь должна быть логика отправки формы или AJAX-запроса на /Survey/Publish/surveyId
-                    console.log(`Публикация опроса с ID: ${surveyId}`);
-                    // Для простоты, можно перенаправить пользователя или отправить форму
-                    // window.location.href = `/Survey/Publish/${surveyId}`;
-                 }
+                if (confirm('Опубликовать эту форму? Она станет доступна по ссылке.')) {
+                    fetch(`/Survey/Publish/${surveyId}`, {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(data.message);
+                            location.reload();
+                        } else {
+                            alert(data.message || 'Ошибка при публикации');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Ошибка при публикации опроса');
+                    });
+                }
+            }
+
+            // JS-функция для снятия с публикации
+            function unpublishSurvey(surveyId) {
+                if (confirm('Снять форму с публикации? Она больше не будет доступна по ссылке.')) {
+                    var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                    
+                    fetch(`/Survey/Unpublish/${surveyId}`, {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': token,
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: '__RequestVerificationToken=' + encodeURIComponent(token)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(data.message);
+                            location.reload();
+                        } else {
+                            alert(data.message || 'Ошибка');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Ошибка');
+                    });
+                }
             }
         </script>
 

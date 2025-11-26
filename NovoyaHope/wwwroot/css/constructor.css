@@ -2,14 +2,30 @@
    1. ОБЩИЙ МАКЕТ КОНСТРУКТОРА
    ==================================== */
 
+:root {
+    --primary-green: #2e7d32;
+    --primary-green-dark: #1b5e20;
+    --primary-green-light: #4caf50;
+    --primary-green-lighter: #81c784;
+    --primary-green-lightest: #c8e6c9;
+    --bg-white: #ffffff;
+    --bg-light: #f5faf5;
+    --bg-lighter: #f1f8f4;
+    --text-dark: #1a1a1a;
+    --text-gray: #5f6368;
+    --border-color: #e0e0e0;
+    --shadow: rgba(46, 125, 50, 0.1);
+}
+
 /* Верхняя панель конструктора (заголовок, кнопки Settings/Send) */
 .editor-header {
-    background-color: #ffffff;
-    border-bottom: 1px solid #dadce0;
+    background-color: var(--bg-white);
+    border-bottom: 2px solid var(--primary-green-lightest);
     padding: 15px 30px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: 0 2px 8px var(--shadow);
 }
 
 .editor-title-input {
@@ -52,8 +68,8 @@
 
     /* Активное/редактируемое состояние */
     .question-block.active-block {
-        border-left-color: #673ab7; /* Фиолетовая полоса слева */
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        border-left-color: var(--primary-green);
+        box-shadow: 0 4px 12px var(--shadow);
     }
 
 .question-input, .option-input {
@@ -67,7 +83,8 @@
 }
 
     .question-input:focus, .option-input:focus {
-        border-bottom-color: #673ab7;
+        border-bottom-color: var(--primary-green);
+        border-bottom-width: 2px;
     }
 
 /* Варианты ответов */
@@ -84,7 +101,7 @@
     .option-item input[type="radio"],
     .option-item input[type="checkbox"] {
         margin-right: 15px;
-        accent-color: #673ab7;
+        accent-color: var(--primary-green);
     }
 
 .remove-option-btn {
@@ -132,8 +149,8 @@
 }
 
     .tool-icon:hover {
-        background-color: #f1f3f4;
-        color: #673ab7;
+        background-color: var(--bg-lighter);
+        color: var(--primary-green);
     }
 
 /* ====================================
