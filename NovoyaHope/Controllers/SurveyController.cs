@@ -3,13 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using NovoyaHope.Data;
 using NovoyaHope.Models;
-using NovoyaHope.Models.ViewModels.SurveyViewModels;
+using NovoyaHope.Models.ViewModels;
 using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authorization;
 using System.Collections.Generic;
-using NovoyaHope.Models.DataModels;
 
 namespace NovoyaHope.Controllers
 {
@@ -73,7 +71,13 @@ namespace NovoyaHope.Controllers
             }
 
             // Здесь необходим маппинг Survey -> ViewModel для конструктора
-            return View("Constructor", survey);
+            var viewModel = new NovoyaHope.Models.ViewModels.SurveyConstructorViewModel
+            {
+                Survey = survey,
+                Questions = survey.Questions?.OrderBy(q => q.Order).ToList() ?? new System.Collections.Generic.List<NovoyaHope.Models.Question>()
+            };
+
+            return View("Constructor", viewModel);
         }
 
         // --- СОХРАНЕНИЕ / ОБНОВЛЕНИЕ ЧЕРЕЗ AJAX ---

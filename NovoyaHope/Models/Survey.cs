@@ -1,5 +1,4 @@
-﻿using NovoyaHope.Models.DataModels;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace NovoyaHope.Models
@@ -25,10 +24,10 @@ namespace NovoyaHope.Models
 
         // Связь с создателем
         public string CreatorId { get; set; }
-        public ApplicationUser Creator { get; set; }
+        public ApplicationUser? Creator { get; set; }
 
         // Навигационные свойства
-        public ICollection<Question> Questions { get; set; }
-        public ICollection<SurveyResponse> Responses { get; set; }
+        public ICollection<Question>? Questions { get; set; }
+        public ICollection<SurveyResponse>? Responses { get; set; }
     }
 }

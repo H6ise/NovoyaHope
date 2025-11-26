@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System;
 
-namespace NovoyaHope.Models.ViewModels.SurveyViewModels
+namespace NovoyaHope.Models.ViewModels
 {
     public class SaveSurveyViewModel
     {

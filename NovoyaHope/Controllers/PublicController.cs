@@ -2,13 +2,12 @@
 using Microsoft.EntityFrameworkCore;
 using NovoyaHope.Data;
 using NovoyaHope.Models;
-using NovoyaHope.Models.ViewModels.PassSurveyViewModels;
+using NovoyaHope.Models.ViewModels;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
-using NovoyaHope.Models.DataModels;
 
 namespace NovoyaHope.Controllers
 {
@@ -37,14 +36,26 @@ namespace NovoyaHope.Controllers
                 return NotFound("Опрос не найден или не опубликован.");
             }
 
-            // Здесь нужен маппинг Survey -> PassSurveyViewModel
+            // Map Survey -> PassSurveyViewModel, include questions and options
             var viewModel = new PassSurveyViewModel
             {
                 Id = survey.Id,
                 Title = survey.Title,
                 Description = survey.Description,
                 IsAnonymous = survey.IsAnonymous,
-                // ... (Маппинг вопросов и опций)
+                Questions = survey.Questions?.OrderBy(q => q.Order).Select(q => new PassQuestionViewModel
+                {
+                    Id = q.Id,
+                    Text = q.Text,
+                    Type = q.Type,
+                    IsRequired = q.IsRequired,
+                    Options = q.AnswerOptions?.OrderBy(o => o.Order).Select(o => new PassAnswerOptionViewModel
+                    {
+                        Id = o.Id,
+                        Text = o.Text,
+                        Order = o.Order
+                    }).ToList() ?? new List<PassAnswerOptionViewModel>()
+                }).ToList() ?? new List<PassQuestionViewModel>()
             };
 
             return View("Pass", viewModel);

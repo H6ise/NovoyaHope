@@ -1,9 +1,7 @@
-﻿// Services/SurveyService.cs
-
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using NovoyaHope.Data;
 using NovoyaHope.Models;
-using NovoyaHope.Models.ViewModels.SurveyViewModels;
+using NovoyaHope.Models.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;

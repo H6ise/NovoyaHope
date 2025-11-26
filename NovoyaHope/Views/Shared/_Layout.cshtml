@@ -7,6 +7,8 @@
 
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 
+    @RenderSection("Styles", required: false)
+
     @RenderSection("ConstructorStyles", required: false)
 </head>
 <body>
@@ -14,7 +16,7 @@
         <div class="container">
             <div class="header-content">
                 <div class="logo">
-                    <a asp-area="" asp-controller="Home" asp-action="Index">NovoyaHope</a>
+                    <a asp-area="" asp-controller="Survey" asp-action="Index">NovoyaHope</a>
                 </div>
 
                 <nav>

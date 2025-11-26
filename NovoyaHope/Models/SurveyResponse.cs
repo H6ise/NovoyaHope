@@ -1,4 +1,4 @@
-﻿using NovoyaHope.Models.DataModels;
+﻿using NovoyaHope.Models;
 using System;
 using System.Collections.Generic;
 
@@ -8,7 +8,7 @@ namespace NovoyaHope.Models
     {
         public int Id { get; set; }
         public int SurveyId { get; set; }
-        public Survey Survey { get; set; }
+        public Survey? Survey { get; set; }
 
         public DateTime SubmissionDate { get; set; }
 
@@ -17,6 +17,6 @@ namespace NovoyaHope.Models
         public ApplicationUser? User { get; set; }
 
         // Конкретные ответы на вопросы
-        public ICollection<UserAnswer> UserAnswers { get; set; }
+        public ICollection<UserAnswer>? UserAnswers { get; set; }
     }
 }

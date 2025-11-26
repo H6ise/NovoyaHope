@@ -1,28 +1,38 @@
-﻿using System.Collections.Generic;
+﻿using NovoyaHope.Models;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace NovoyaHope.Models
 {
     public enum QuestionType
     {
-        SingleChoice = 1,    // Один вариант (Radio button)
-        MultipleChoice = 2,  // Несколько вариантов (Checkbox)
-        ShortText = 3,       // Короткий текст
-        ParagraphText = 4,   // Длинный текст
-        Scale = 5            // Шкала (1-5, 1-10 и т.д.)
+        ShortText,
+        ParagraphText,
+        SingleChoice,     // Радио-кнопки
+        MultipleChoice,   // Чек-боксы
+        Scale
     }
 
     public class Question
     {
         public int Id { get; set; }
         public int SurveyId { get; set; }
-        public Survey Survey { get; set; }
-
-        public int Order { get; set; } // Порядок отображения
         public string Text { get; set; }
         public QuestionType Type { get; set; }
-        public bool IsRequired { get; set; } = true;
+        public bool IsRequired { get; set; }
+        public int Order { get; set; }
 
-        // Варианты ответов (для Choice и Scale)
-        public ICollection<AnswerOption> AnswerOptions { get; set; }
+        // Навигационные свойства
+        public Survey? Survey { get; set; }
+        public ICollection<AnswerOption>? AnswerOptions { get; set; } // Варианты для выбора
+
+        // Compatibility alias for views that reference "Options"
+        [NotMapped]
+        public ICollection<AnswerOption>? Options
+        {
+            get => AnswerOptions;
+            set => AnswerOptions = value;
+        }
+        public ICollection<Answer>? Answers { get; set; } // Ответы на этот вопрос
     }
 }

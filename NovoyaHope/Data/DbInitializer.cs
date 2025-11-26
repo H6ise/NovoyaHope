@@ -1,10 +1,7 @@
-﻿// Data/DbInitializer.cs
-
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using NovoyaHope.Models;
 using System.Threading.Tasks;
 using System.Linq;
-using NovoyaHope.Models.DataModels;
 
 namespace NovoyaHope.Data
 {

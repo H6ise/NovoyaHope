@@ -1,7 +1,5 @@
-﻿// Services/ISurveyService.cs
-
-using NovoyaHope.Models.DataModels;
-using NovoyaHope.Models.ViewModels.SurveyViewModels;
+﻿using NovoyaHope.Models;
+using NovoyaHope.Models.ViewModels;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 

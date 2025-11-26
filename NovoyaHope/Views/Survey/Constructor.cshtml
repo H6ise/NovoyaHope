@@ -1,173 +1,167 @@
-﻿@model NovoyaHope.Models.Survey
+﻿@model NovoyaHope.Models.ViewModels.SurveyConstructorViewModel
 @using NovoyaHope.Models
 
 @{
-    ViewData["Title"] = "Конструктор";
+    ViewData["Title"] = "Конструктор - " + (Model.Survey.Title ?? "Новая форма");
     Layout = "_Layout";
 }
 
-@section ConstructorStyles {
-    <link rel="stylesheet" href="~/css/constructor.css" />
+@section Styles {
+    <link rel="stylesheet" href="~/css/constructor.css" asp-append-version="true" />
 }
 
-<body data-survey-id="@Model.Id">
-    <div class="editor-header">
-        <div class="header-left">
-            <a asp-action="Index" style="margin-right: 15px; font-size: 1.2rem;">←</a>
-            <span>@(string.IsNullOrEmpty(Model.Title) ? "Новая форма" : Model.Title)</span>
-        </div>
+<body data-survey-id="@Model.Survey.Id">
 
-        <div class="tabs-nav" style="display: flex; gap: 20px;">
-            <a href="#" class="tab-link active" onclick="switchTab('questions')">Вопросы</a>
-            <a href="#" class="tab-link" onclick="switchTab('responses')">Ответы</a>
-            <a href="#" class="tab-link" onclick="switchTab('settings')">Настройки</a>
-        </div>
-
-        <div class="header-right">
-            <button id="save-survey-btn" class="btn-primary" style="margin-right: 10px;">Сохранить</button>
-
-            <form asp-action="Publish" asp-route-id="@Model.Id" method="post" style="display: inline;">
-                <button type="submit" class="btn-primary" style="background-color: #1a73e8;">
-                    @(Model.IsPublished ? "Обновить публикацию" : "Опубликовать")
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <div class="editor-main">
-
+    <form asp-controller="Survey" asp-action="Save" method="post" id="survey-form">
         @Html.AntiForgeryToken()
+        <input type="hidden" name="Survey.Id" value="@Model.Survey.Id" />
+        <input type="hidden" name="Survey.IsPublished" value="@Model.Survey.IsPublished.ToString()" />
 
-        <div id="tab-questions" class="tab-content active" style="width: 100%; display: flex; justify-content: center;">
+        <div class="editor-header">
+            <div class="editor-header-inner">
 
-            <div class="questions-container" id="questions-container">
-
-                <div class="question-block" style="border-top: 8px solid #673ab7; border-left: none;">
-                    <input type="text" id="survey-title-input" class="editor-title-input"
-                           value="@Model.Title" placeholder="Новая форма"
-                           style="width: 100%; font-size: 2rem; margin-bottom: 10px;">
-
-                    <input type="text" id="survey-description-input" class="question-input"
-                           value="@Model.Description" placeholder="Описание"
-                           style="width: 100%; font-size: 1rem;">
+                <div class="header-left">
+                    <i class="fas fa-eye header-icon" title="Предпросмотр"></i>
+                    <i class="fas fa-palette header-icon" title="Настроить тему"></i>
+                    <i class="fas fa-cog header-icon" title="Настройки"></i>
                 </div>
 
-                @if (Model.Questions != null)
-                {
-                    foreach (var question in Model.Questions.OrderBy(q => q.Order))
-                    {
-                        <div class="question-block" data-question-id="@question.Id">
-                            <div class="question-content">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                                    <input type="text" class="question-input" value="@question.Text" placeholder="Вопрос">
+                <div class="tabs-nav">
+                    <a href="#" class="tab-link active" onclick="switchTab(event, 'questions')">Вопросы</a>
+                    <a asp-controller="Response" asp-action="Index" asp-route-surveyId="@Model.Survey.Id" class="tab-link">Ответы</a>
+                    <a href="#" class="tab-link" onclick="switchTab(event, 'settings')">Настройки</a>
+                </div>
 
-                                    <select class="form-control" style="width: 200px;" onchange="changeQuestionType(this)">
+                <div class="header-right">
+                    <button type="submit" class="btn-secondary" style="margin-right: 10px;">Сохранить</button>
+                    <button type="button" onclick="publishSurvey(@Model.Survey.Id)" class="btn-primary" style="background-color: #1a73e8;">
+                        @(Model.Survey.IsPublished ? "Опубликовано" : "Опубликовать")
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="editor-main">
+
+            <div id="tab-questions" class="tab-content active" style="width: 100%; display: flex; justify-content: center;">
+
+                <div class="questions-container" id="questions-container">
+
+                    <div class="question-block active" style="border-left: 7px solid var(--primary-color);">
+                        <input type="text" id="survey-title-input" class="editor-title-input"
+                               value="@(Model.Survey.Title ?? "Новая форма")" placeholder="Новая форма"
+                               name="Survey.Title">
+
+                        <input type="text" id="survey-description-input" class="question-input"
+                               value="@Model.Survey.Description" placeholder="Описание"
+                               name="Survey.Description">
+                    </div>
+
+                    @if (Model.Questions != null)
+                    {
+                        foreach (var question in Model.Questions.OrderBy(q => q.Order))
+                        {
+                            // Рендеринг сохраненного вопроса (упрощенный пример)
+                            <div class="question-block" data-question-id="@question.Id">
+                                <div class="question-header">
+                                    <input type="text" class="question-input question-text-input"
+                                           placeholder="Вопрос без заголовка"
+                                           value="@question.Text"
+                                           name="Questions[@question.Id].Text">
+
+                                    <select class="form-control question-type-select"
+                                            name="Questions[@question.Id].Type"
+                                            data-question-id="@question.Id"
+                                            onchange="changeQuestionType(this, @question.Id)">
                                         <option value="SingleChoice" selected="@(question.Type == QuestionType.SingleChoice)">Один из списка</option>
                                         <option value="MultipleChoice" selected="@(question.Type == QuestionType.MultipleChoice)">Несколько из списка</option>
-                                        <option value="ShortText" selected="@(question.Type == QuestionType.ShortText)">Текст строка</option>
-                                        <option value="ParagraphText" selected="@(question.Type == QuestionType.ParagraphText)">Текст абзац</option>
+                                        <option value="ShortText" selected="@(question.Type == QuestionType.ShortText)">Текст (строка)</option>
+                                        <option value="ParagraphText" selected="@(question.Type == QuestionType.ParagraphText)">Текст (абзац)</option>
                                     </select>
                                 </div>
-
-                                <div class="options-list" style="@(question.Type == QuestionType.ShortText || question.Type == QuestionType.ParagraphText ? "display:none" : "display:block")">
-                                    @if (question.AnswerOptions != null)
+                                <div class="question-body options-container" data-question-id="@question.Id">
+                                    @if (question.Options != null && question.Options.Any())
                                     {
-                                        foreach (var option in question.AnswerOptions.OrderBy(o => o.Order))
+                                        foreach (var option in question.Options.OrderBy(o => o.Order))
                                         {
                                             <div class="option-item" data-option-id="@option.Id">
-                                                <input type="@(question.Type == QuestionType.SingleChoice ? "radio" : "checkbox")" disabled>
-                                                <input type="text" class="option-input" value="@option.Text" placeholder="Вариант">
-                                                <button class="remove-option-btn" onclick="removeOption(this)">×</button>
+                                                <input type="@(question.Type == QuestionType.MultipleChoice ? "checkbox" : "radio")" disabled style="margin-right: 10px;">
+                                                <input type="text" class="option-input"
+                                                       value="@option.Text"
+                                                       name="Questions[@question.Id].Options[@option.Id].Text">
+                                                <input type="hidden" name="Questions[@question.Id].Options[@option.Id].Order" value="@option.Order">
+                                                <button type="button" class="btn-icon delete-option-btn" onclick="deleteOption(this)">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
                                             </div>
                                         }
                                     }
-                                    <div class="add-option-area" style="margin-top: 10px; cursor: pointer; color: #673ab7;" onclick="addOptionToBlock(this)">
-                                        <input type="@(question.Type == QuestionType.SingleChoice ? "radio" : "checkbox")" disabled>
-                                        <span style="margin-left: 10px;">Добавить вариант</span>
+                                    <div class="add-option-area" onclick="addOptionToQuestion(@question.Id)">
+                                        <input type="@(question.Type == QuestionType.MultipleChoice ? "checkbox" : "radio")" disabled style="margin-right: 10px;">
+                                        <span class="add-option-link">Добавить вариант</span>
                                     </div>
                                 </div>
+                                <div class="question-footer">
+                                    <button type="button" class="btn-icon duplicate-btn" title="Дублировать" onclick="duplicateQuestion(this)"><i class="far fa-copy"></i></button>
+                                    <button type="button" class="btn-icon delete-btn" title="Удалить" onclick="deleteQuestion(this)"><i class="fas fa-trash-alt"></i></button>
+                                    <div class="separator-line"></div>
+                                    <label class="required-label">
+                                        Обязательный вопрос
+                                        <input type="checkbox" class="required-toggle" name="Questions[@question.Id].IsRequired" @(question.IsRequired ? "checked" : "")>
+                                    </label>
+                                </div>
                             </div>
-
-                            <div class="question-footer" style="display: flex; justify-content: flex-end; align-items: center; margin-top: 20px; padding-top: 10px; border-top: 1px solid #dadce0;">
-                                <button class="btn-icon" onclick="deleteQuestion(this)" title="Удалить">🗑️</button>
-                                <div style="border-left: 1px solid #dadce0; height: 20px; margin: 0 15px;"></div>
-                                <label style="display: flex; align-items: center; cursor: pointer; font-size: 0.9rem;">
-                                    Обязательный вопрос
-                                    <input type="checkbox" class="required-toggle" style="margin-left: 10px;" @(question.IsRequired ? "checked" : "")>
-                                </label>
-                            </div>
-                        </div>
+                        }
                     }
-                }
 
-            </div> <aside class="sidebar-tools">
-                <div class="tool-group">
-                    <div class="tool-icon" id="add-question-btn" title="Добавить вопрос">➕</div>
-                    <div class="tool-icon" title="Импортировать (не работает)">📥</div>
-                    <div class="tool-icon" title="Добавить название">Ｔ</div>
-                    <div class="tool-icon" title="Добавить изображение">🖼️</div>
-                    <div class="tool-icon" title="Добавить видео">🎬</div>
-                    <div class="tool-icon" title="Добавить раздел">⚌</div>
-                </div>
-            </aside>
-        </div>
+                    <input type="hidden" id="deleted-elements" name="DeletedElements" value="" />
 
-        <div id="tab-responses" class="tab-content" style="display: none; width: 100%; max-width: 800px; margin: 0 auto;">
-            <div style="text-align: center; margin-top: 50px;">
-                @if (Model.IsPublished)
-                {
-                    <h3>Опрос опубликован</h3>
-                    <p>Ответы будут появляться здесь.</p>
-                    <a href="/public/viewsurvey/@Model.Id" target="_blank">Ссылка на опрос</a>
-                }
-                else
-                {
-                    <h3>Опрос не опубликован</h3>
-                    <p>Опубликуйте опрос, чтобы начать собирать ответы.</p>
-                }
+                </div> <aside class="sidebar-tools">
+                    <div class="tool-group">
+                        <div class="tool-icon" id="add-question-btn" title="Добавить вопрос" onclick="addNewQuestion()">➕</div>
+                        <div class="tool-icon" title="Импортировать вопросы">📄</div>
+                        <div class="tool-icon" title="Добавить название и описание">Ｔt</div>
+                        <div class="tool-icon" title="Добавить изображение">🖼️</div>
+                        <div class="tool-icon" title="Добавить видео">🎬</div>
+                        <div class="tool-icon" title="Добавить раздел">▤</div>
+                    </div>
+                </aside>
             </div>
-        </div>
 
-        <div id="tab-settings" class="tab-content" style="display: none; width: 100%; max-width: 800px; margin: 0 auto;">
-            <div class="question-block">
-                <h4>Настройки</h4>
-                <div class="form-group" style="margin-top: 20px;">
-                    <label>
-                        <input type="checkbox" id="setting-anonymous" @(Model.IsAnonymous ? "checked" : "")>
-                        Анонимный опрос (не собирать email)
-                    </label>
-                </div>
-                <div class="form-group" style="margin-top: 20px;">
-                    <label>Дата окончания:</label>
-                    <input type="date" id="setting-enddate" class="form-control" value="@(Model.EndDate?.ToString("yyyy-MM-dd"))">
+            <div id="tab-settings" class="tab-content" style="display: none;">
+                <div style="max-width: 600px; margin: 40px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    <h3>Настройки формы</h3>
+                    <p style="color: var(--gray-text);">Здесь будет интерфейс для управления общими настройками опроса: ограничение на один ответ, показ шкалы прогресса и т.д.</p>
                 </div>
             </div>
+
         </div>
+    </form>
 
-    </div>
+    @section Scripts {
+        <script>
+            // JS-функция для переключения вкладок
+            function switchTab(event, tabName) {
+                event.preventDefault();
+                document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('.tab-link').forEach(el => el.classList.remove('active'));
 
-    <script>
-        function switchTab(tabName) {
-            // Скрыть все вкладки
-            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.tab-link').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-link').forEach(el => el.style.borderBottom = 'none');
-            document.querySelectorAll('.tab-link').forEach(el => el.style.color = '#5f6368');
+                // Активируем нужную вкладку
+                document.getElementById('tab-' + tabName).style.display = (tabName === 'questions' ? 'flex' : 'block');
+                event.target.classList.add('active');
+            }
 
-            // Показать выбранную
-            document.getElementById('tab-' + tabName).style.display = (tabName === 'questions') ? 'flex' : 'block';
+            // JS-функция для публикации
+            function publishSurvey(surveyId) {
+                 if (confirm('Опубликовать эту форму? Она станет доступна по ссылке.')) {
+                    // Здесь должна быть логика отправки формы или AJAX-запроса на /Survey/Publish/surveyId
+                    console.log(`Публикация опроса с ID: ${surveyId}`);
+                    // Для простоты, можно перенаправить пользователя или отправить форму
+                    // window.location.href = `/Survey/Publish/${surveyId}`;
+                 }
+            }
+        </script>
 
-            // Стили активной вкладки
-            const activeLink = document.querySelector(`.tab-link[onclick="switchTab('${tabName}')"]`);
-            activeLink.style.color = '#673ab7';
-            activeLink.style.borderBottom = '3px solid #673ab7';
-        }
-
-        // Инициализация первой вкладки
-        switchTab('questions');
-    </script>
-
-    @section ConstructorScripts {
-        <script src="~/js/constructor.js"></script>
+        <script src="~/js/constructor.js" asp-append-version="true"></script>
     }
 </body>

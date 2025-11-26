@@ -122,3 +122,100 @@ a {
     font-size: 0.85rem;
     margin-top: 5px;
 }
+
+/* Вставить в раздел 4. Стили КОНСТРУКТОРА */
+
+/* Активный блок вопроса */
+.question-block.active {
+    border-left: 7px solid var(--primary-color) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Структура вопроса */
+.question-block .question-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+.question-block .question-text-input {
+    flex-grow: 1;
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 5px 0;
+}
+
+.question-type-select {
+    width: 220px;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: #f8f9fa;
+}
+
+/* Варианты ответа */
+.option-item {
+    display: flex;
+    align-items: center;
+    padding: 5px 0;
+}
+
+.option-input {
+    flex-grow: 1;
+    border: none;
+    outline: none;
+    padding: 5px 0;
+    border-bottom: 1px dotted var(--border-color);
+    margin: 0 10px;
+}
+
+    .option-input:focus {
+        border-bottom: 1px solid var(--primary-color);
+    }
+
+.add-option-area {
+    cursor: pointer;
+    color: var(--gray-text);
+    padding: 5px 0;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.add-option-link {
+    color: #1a73e8;
+    margin-left: 5px;
+}
+
+.delete-option-btn {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+/* Футер вопроса */
+.question-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color);
+    gap: 15px;
+}
+
+.separator-line {
+    height: 20px;
+    width: 1px;
+    background-color: var(--border-color);
+    margin: 0 10px;
+}
+
+.required-label {
+    font-size: 0.9rem;
+    color: var(--gray-text);
+    display: flex;
+    align-items: center;
+}

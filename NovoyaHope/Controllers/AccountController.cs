@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using NovoyaHope.Models;
-using NovoyaHope.Models.ViewModels.AccountViewModels;
+using NovoyaHope.Models.ViewModels;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using System.Diagnostics;
-using NovoyaHope.Models.DataModels;
 
 namespace NovoyaHope.Controllers
 {

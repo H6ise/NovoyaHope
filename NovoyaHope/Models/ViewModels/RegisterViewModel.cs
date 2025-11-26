@@ -1,21 +1,26 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace NovoyaHope.Models.ViewModels.AccountViewModels
+namespace NovoyaHope.Models.ViewModels
 {
     public class RegisterViewModel
     {
-        [Required(ErrorMessage = "Введите email.")]
-        [EmailAddress(ErrorMessage = "Неверный формат email.")]
+        [Required(ErrorMessage = "Введите Email")]
+        [EmailAddress(ErrorMessage = "Некорректный формат Email")]
         public string Email { get; set; }
 
-        [Required(ErrorMessage = "Введите пароль.")]
-        [StringLength(100, ErrorMessage = "Пароль должен содержать минимум {2} символов.", MinimumLength = 6)]
+        [Required(ErrorMessage = "Введите имя пользователя")]
+        [Display(Name = "Имя пользователя")]
+        public string UserName { get; set; }
+
+        [Required(ErrorMessage = "Введите пароль")]
+        [StringLength(100, ErrorMessage = "Пароль должен содержать не менее {2} и не более {1} символов.", MinimumLength = 6)]
         [DataType(DataType.Password)]
+        [Display(Name = "Пароль")]
         public string Password { get; set; }
 
         [DataType(DataType.Password)]
-        [Display(Name = "Подтвердите пароль")]
-        [Compare("Password", ErrorMessage = "Пароли не совпадают.")]
+        [Display(Name = "Подтверждение пароля")]
+        [Compare("Password", ErrorMessage = "Пароль и его подтверждение не совпадают.")]
         public string ConfirmPassword { get; set; }
     }
 }

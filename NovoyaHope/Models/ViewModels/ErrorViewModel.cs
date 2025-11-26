@@ -1,4 +1,4 @@
-namespace NovoyaHope.Models
+namespace NovoyaHope.Models.ViewModels
 {
     public class ErrorViewModel
     {

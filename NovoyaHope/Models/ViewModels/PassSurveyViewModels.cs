@@ -1,7 +1,7 @@
 ﻿using NovoyaHope.Models;
 using System.Collections.Generic;
 
-namespace NovoyaHope.Models.ViewModels.PassSurveyViewModels
+namespace NovoyaHope.Models.ViewModels
 {
     public class PassSurveyViewModel
     {

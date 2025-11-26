@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using System.Collections.Generic;
 
-namespace NovoyaHope.Models.DataModels
+namespace NovoyaHope.Models
 {
     // Расширяем стандартный IdentityUser, чтобы добавить связи с опросами
     public class ApplicationUser : IdentityUser

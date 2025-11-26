@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using NovoyaHope.Models;
-using NovoyaHope.Models.DataModels;
 using System.Collections.Generic;
 using System.Reflection.Emit;
 

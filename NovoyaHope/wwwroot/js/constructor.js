@@ -1,177 +1,217 @@
-﻿document.addEventListener('DOMContentLoaded', () => {
-    console.log('Constructor JavaScript loaded successfully.');
+﻿// Глобальный счетчик для временных ID новых, несохраненных вопросов
+let newQuestionCounter = -1;
+let newOptionCounter = -1;
 
-    const questionsContainer = document.getElementById('questions-container');
-    const sidebar = document.querySelector('.sidebar-tools');
-    const editorHeader = document.querySelector('.editor-header');
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Constructor JavaScript loaded.');
+    setupBlockActivation();
+});
 
-    if (!questionsContainer) return;
+// ===========================================
+// 1. АКТИВАЦИЯ БЛОКА ВОПРОСА
+// ===========================================
 
-    // --- 1. Динамическое позиционирование сайдбара (Логика Следования) ---
-
-    // Высота шапки конструктора
-    const editorHeaderHeight = editorHeader ? editorHeader.offsetHeight : 0;
-    const HEADER_OFFSET = editorHeaderHeight + 20; // Отступ от нижней границы шапки
-
-    function updateSidebarPosition() {
-        if (window.innerWidth <= 992 || !sidebar || !questionsContainer) {
-            // Отключаем логику на мобильных или если элементов нет
-            return;
-        }
-
-        // 1. Определяем активный или ближайший к верхней части экрана вопрос
-        const questionBlocks = Array.from(document.querySelectorAll('.question-block'));
-        let targetBlock = questionBlocks.find(b => b.classList.contains('active-block'));
-
-        if (!targetBlock && questionBlocks.length > 0) {
-            // Если нет активного, берем первый блок, который виден
-            targetBlock = questionBlocks[0];
-        }
-
-        if (targetBlock) {
-            const rect = targetBlock.getBoundingClientRect();
-            const containerRect = questionsContainer.getBoundingClientRect();
-
-            // Вычисляем, где должна быть верхняя часть сайдбара относительно документа
-            let newTopPosition = window.scrollY + rect.top;
-
-            // Если активный блок уходит выше зоны заголовка, прилипаем к заголовку
-            if (rect.top <= HEADER_OFFSET) {
-                newTopPosition = window.scrollY + HEADER_OFFSET;
+function setupBlockActivation() {
+    // Делаем активным только тот блок, на который кликнули
+    document.querySelectorAll('.question-block').forEach(block => {
+        block.onclick = (e) => {
+            // Игнорируем клики по элементам управления (кнопки, селекты, инпуты) внутри блока
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT' || e.target.closest('.btn-icon')) {
+                return;
             }
 
-            // Переводим абсолютную позицию в относительную позицию внутри .editor-main 
-            // Мы вычитаем начальное смещение родителя (questionsContainer)
-            const finalTop = newTopPosition - questionsContainer.offsetTop;
+            // Убираем активное состояние со всех блоков
+            document.querySelectorAll('.question-block').forEach(b => b.classList.remove('active'));
 
-            // Ограничение: не выходить за нижнюю границу контейнера вопросов
-            const maxTop = containerRect.height - sidebar.offsetHeight;
+            // Добавляем активное состояние текущему блоку
+            block.classList.add('active');
+        };
+    });
+}
 
-            // Применяем позицию, ограничивая ее снизу нулем (чтобы не уходить выше) и maxTop
-            const clampedTop = Math.max(0, Math.min(finalTop, maxTop));
+// ===========================================
+// 2. ГЕНЕРАЦИЯ HTML ДЛЯ НОВЫХ ЭЛЕМЕНТОВ
+// ===========================================
 
-            sidebar.style.top = `${clampedTop}px`;
-        }
+// Генерирует HTML для нового варианта ответа (option)
+function getOptionHtml(questionId, text = 'Вариант', isOther = false) {
+    const tempOptionId = newOptionCounter--; // Используем отрицательный ID для временных опций
+
+    // Тип инпута (radio или checkbox) будет определен функцией changeQuestionType
+    const inputType = document.querySelector(`.question-block[data-question-id="${questionId}"] .question-type-select`).value === 'MultipleChoice' ? 'checkbox' : 'radio';
+
+    const baseHtml = `
+        <div class="option-item" data-option-id="${tempOptionId}">
+            <input type="${inputType}" disabled style="margin-right: 10px;">
+            <input type="text" class="option-input" placeholder="Вариант" 
+                   value="${isOther ? 'Другое...' : text}" 
+                   name="Questions[${questionId}].Options[${tempOptionId}].Text">
+            
+            <input type="hidden" name="Questions[${questionId}].Options[${tempOptionId}].Order" value="${Math.abs(tempOptionId)}">
+            <input type="hidden" name="Questions[${questionId}].Options[${tempOptionId}].IsOther" value="${isOther}">
+
+            <button type="button" class="btn-icon delete-option-btn" onclick="deleteOption(this)">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    return baseHtml.trim();
+}
+
+
+// Генерирует HTML для нового блока вопроса
+function getNewQuestionHtml(tempId) {
+    const defaultOptionHtml = getOptionHtml(tempId, 'Вариант 1');
+
+    return `
+    <div class="question-block active" data-question-id="${tempId}" data-is-new="true">
+        <div class="question-header">
+            <input type="text" class="question-input question-text-input" 
+                   placeholder="Вопрос без заголовка" value="" 
+                   name="Questions[${tempId}].Text">
+            
+            <select class="form-control question-type-select" 
+                    name="Questions[${tempId}].Type"
+                    onchange="changeQuestionType(this, ${tempId})">
+                <option value="SingleChoice" selected>Один из списка</option>
+                <option value="MultipleChoice">Несколько из списка</option>
+                <option value="ShortText">Текст (строка)</option>
+                <option value="ParagraphText">Текст (абзац)</option>
+                <option value="Scale">Шкала (1-5)</option>
+            </select>
+        </div>
+
+        <div class="question-body options-container" data-question-id="${tempId}">
+            ${defaultOptionHtml}
+            
+            <div class="add-option-area" onclick="addOptionToQuestion(${tempId})">
+                <input type="radio" disabled style="margin-right: 10px;">
+                <span class="add-option-link">Добавить вариант</span>
+            </div>
+        </div>
+
+        <div class="question-footer">
+            <button type="button" class="btn-icon duplicate-btn" title="Дублировать" onclick="duplicateQuestion(this)"><i class="far fa-copy"></i></button>
+            <button type="button" class="btn-icon delete-btn" title="Удалить" onclick="deleteQuestion(this)"><i class="fas fa-trash-alt"></i></button>
+            <div class="separator-line"></div>
+            <label class="required-label">
+                Обязательный вопрос
+                <input type="checkbox" class="required-toggle" name="Questions[${tempId}].IsRequired">
+            </label>
+        </div>
+    </div>
+    `;
+}
+
+// ===========================================
+// 3. ОСНОВНАЯ ЛОГИКА ДОБАВЛЕНИЯ
+// ===========================================
+
+function addNewQuestion() {
+    // 1. Снимаем активность со всех блоков
+    document.querySelectorAll('.question-block').forEach(block => block.classList.remove('active'));
+
+    // 2. Генерируем новый временный ID
+    const tempId = newQuestionCounter--;
+    const container = document.getElementById('questions-container');
+
+    // 3. Находим блок заголовка, чтобы вставить новый вопрос после него
+    const headerBlock = container.querySelector('.question-block:first-child');
+
+    // 4. Создаем новый блок
+    const newBlock = document.createElement('div');
+    newBlock.innerHTML = getNewQuestionHtml(tempId).trim();
+    const insertedBlock = newBlock.firstChild;
+
+    // 5. Вставляем
+    if (headerBlock) {
+        headerBlock.after(insertedBlock);
+    } else {
+        container.appendChild(insertedBlock);
     }
 
-    // Привязываем функцию к прокрутке и изменению размера окна
-    window.addEventListener('scroll', updateSidebarPosition);
-    window.addEventListener('resize', updateSidebarPosition);
+    // 6. Прокручиваем и активируем слушателей
+    insertedBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setupBlockActivation(); // Перенастраиваем слушателей кликов
 
-    // Запускаем при загрузке, чтобы установить начальную позицию
-    // Добавляем небольшую задержку, чтобы убедиться, что все стили и размеры загружены
-    setTimeout(updateSidebarPosition, 100);
+    // Дополнительный шаг: фокусируемся на поле ввода вопроса
+    insertedBlock.querySelector('.question-text-input').focus();
+}
 
-    // --- 2. Управление активным блоком и кнопкой добавления ---
+// ===========================================
+// 4. ФУНКЦИИ УПРАВЛЕНИЯ ЭЛЕМЕНТАМИ
+// ===========================================
 
-    questionsContainer.addEventListener('click', (e) => {
-        const block = e.target.closest('.question-block');
-        if (block) {
-            setActiveBlock(block);
-        }
-    });
+function deleteQuestion(button) {
+    if (confirm('Вы уверены, что хотите удалить этот вопрос?')) {
+        const block = button.closest('.question-block');
+        block.remove();
+    }
+}
 
-    function setActiveBlock(block) {
-        // Удаляем активный класс со всех блоков
-        document.querySelectorAll('.question-block').forEach(b => {
-            b.classList.remove('active-block');
+function addOptionToQuestion(questionId) {
+    const container = document.querySelector(`.question-block[data-question-id="${questionId}"] .options-container`);
+    const addOptionArea = container.querySelector('.add-option-area');
+
+    const newOptionHtml = getOptionHtml(questionId);
+
+    // Вставляем новый вариант перед кнопкой "Добавить вариант"
+    addOptionArea.insertAdjacentHTML('beforebegin', newOptionHtml);
+
+    // Фокусируемся на новом поле ввода
+    addOptionArea.previousElementSibling.querySelector('.option-input').focus();
+}
+
+function deleteOption(button) {
+    button.closest('.option-item').remove();
+}
+
+function changeQuestionType(selectElement, questionId) {
+    const type = selectElement.value;
+    const container = document.querySelector(`.question-block[data-question-id="${questionId}"] .options-container`);
+    let optionsHtml = '';
+
+    // Сбрасываем содержимое контейнера
+    container.innerHTML = '';
+
+    if (type === 'ShortText' || type === 'ParagraphText') {
+        // Для текстовых полей
+        const inputTag = type === 'ShortText' ?
+            `<input type="text" class="input-line" placeholder="Текст ответа..." disabled>` :
+            `<textarea class="input-line" rows="3" placeholder="Текст ответа..." disabled></textarea>`;
+
+        container.innerHTML = `<div style="padding: 10px 0; color: var(--gray-text); font-style: italic;">${inputTag}</div>`;
+
+    } else if (type === 'SingleChoice' || type === 'MultipleChoice' || type === 'Scale') {
+        // Для вопросов с вариантами
+        const defaultOptions = (type === 'Scale') ? ['1', '2', '3', '4', '5'] : ['Вариант 1'];
+
+        defaultOptions.forEach((text, index) => {
+            optionsHtml += getOptionHtml(questionId, text);
         });
-        // Устанавливаем активный класс на текущий блок
-        block.classList.add('active-block');
-        updateSidebarPosition();
-    }
 
-    // --- 3. Обработка клика по кнопке "Добавить вопрос" ---
-
-    document.getElementById('add-question-btn')?.addEventListener('click', () => {
-        const newQuestionHtml = createNewQuestionBlock();
-        questionsContainer.insertAdjacentHTML('beforeend', newQuestionHtml);
-
-        const newBlock = questionsContainer.lastElementChild;
-        setActiveBlock(newBlock);
-        newBlock.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Прокрутка к новому блоку
-    });
-
-    function createNewQuestionBlock() {
-        const questionCount = document.querySelectorAll('.question-block').length;
-        // Это упрощенная HTML-структура, которая должна соответствовать вашему бэкенду
-        return `
-            <div class="question-block active-block" data-question-id="temp_${Date.now()}">
-                <div class="question-content">
-                    <input type="text" class="question-input" value="Вопрос ${questionCount + 1}" placeholder="Введите вопрос">
-                    
-                    <div class="options-list">
-                        <div class="option-item">
-                            <input type="radio" disabled>
-                            <input type="text" class="option-input" placeholder="Вариант 1">
-                            <button class="remove-option-btn" title="Удалить вариант">×</button>
-                        </div>
-                        <button class="add-option-btn">+ Добавить вариант</button>
-                    </div>
-                </div>
-                <div class="question-footer">
-                    <button class="btn-delete-question" title="Удалить вопрос">🗑️</button>
-                    <label>
-                        <input type="checkbox" checked class="required-toggle"> Обязательный вопрос
-                    </label>
-                </div>
+        // Добавляем все варианты и зону "Добавить вариант"
+        container.innerHTML = optionsHtml + `
+            <div class="add-option-area" onclick="addOptionToQuestion(${questionId})">
+                <input type="radio" disabled style="margin-right: 10px;">
+                <span class="add-option-link">Добавить вариант</span>
             </div>
         `;
     }
 
-    // --- 4. Обработка сохранения (AJAX) ---
+    // Обновляем тип инпутов в options (если они есть)
+    updateOptionInputTypes(questionId, type);
+}
 
-    // Предполагается, что у вас есть кнопка сохранения или автосохранение
-    document.getElementById('save-survey-btn')?.addEventListener('click', async () => {
-        const surveyData = collectSurveyData(); // Функция сбора всех данных из DOM
+function updateOptionInputTypes(questionId, newType) {
+    const questionBlock = document.querySelector(`.question-block[data-question-id="${questionId}"]`);
+    const isMulti = newType === 'MultipleChoice';
+    const inputType = isMulti ? 'checkbox' : 'radio';
 
-        try {
-            const response = await fetch('/api/surveys/save', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    // Добавьте токен CSRF, если вы его используете (рекомендуется)
-                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                },
-                body: JSON.stringify(surveyData)
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                console.log('Сохранено успешно:', result);
-                alert('Опрос успешно сохранен!');
-                // Обновление ID в URL, если это была первая запись
-                if (!surveyData.Id) {
-                    window.history.pushState({}, '', `/survey/edit/${result.SurveyId}`);
-                }
-            } else {
-                console.error('Ошибка сохранения:', response.statusText);
-                alert('Ошибка при сохранении опроса.');
-            }
-        } catch (error) {
-            console.error('Ошибка сети:', error);
-            alert('Сбой сети при сохранении.');
-        }
+    questionBlock.querySelectorAll('.option-item input[type="radio"], .option-item input[type="checkbox"]').forEach(input => {
+        // Мы не можем изменить type напрямую, поэтому клонируем элемент
+        const newInput = input.cloneNode(true);
+        newInput.type = inputType;
+        input.parentNode.replaceChild(newInput, input);
     });
-
-    function collectSurveyData() {
-        // Эта функция должна парсить DOM и собирать все данные в SaveSurveyViewModel
-        const data = {
-            Id: parseInt(document.body.dataset.surveyId) || null,
-            Title: document.getElementById('survey-title-input').value,
-            Description: document.getElementById('survey-description-input')?.value || '',
-            // ... другие метаданные
-            Questions: []
-        };
-
-        document.querySelectorAll('.question-block').forEach((block, index) => {
-            // Здесь должна быть логика извлечения ID, текста, типа и опций
-            // ...
-        });
-
-        return data;
-    }
-
-    // Инициализация
-    updateSidebarPosition();
-});
+}

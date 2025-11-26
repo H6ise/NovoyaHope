@@ -2,7 +2,7 @@
 using NovoyaHope.Models;
 using System;
 
-namespace NovoyaHope.Models.ViewModels.ResponseViewModels
+namespace NovoyaHope.Models.ViewModels
 {
     // Основная модель для страницы результатов/аналитики
     public class SurveyResultsViewModel

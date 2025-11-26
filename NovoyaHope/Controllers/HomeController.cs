@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using NovoyaHope.Models;
 using NovoyaHope.Data;
 using NovoyaHope.Models.ViewModels; // Предполагаем, что ErrorViewModel находится здесь
-using NovoyaHope.Models.ViewModels.SurveyViewModels; // Нужна для HomeIndexViewModel
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;

@@ -5,7 +5,6 @@ using NovoyaHope.Models;
 using NovoyaHope.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
-using NovoyaHope.Models.DataModels;
 
 var builder = WebApplication.CreateBuilder(args);
 

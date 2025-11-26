@@ -3,11 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using NovoyaHope.Data;
 using NovoyaHope.Models;
-using NovoyaHope.Models.ViewModels.SurveyViewModels; // Используем SaveSurveyViewModel
+using NovoyaHope.Models.ViewModels; // Используем SaveSurveyViewModel
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
-using NovoyaHope.Models.DataModels;
 
 namespace NovoyaHope.Controllers
 {
