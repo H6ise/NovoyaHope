@@ -184,7 +184,7 @@ namespace NovoyaHope.Migrations
                     b.ToTable("AnswerOptions", "Identity");
                 });
 
-            modelBuilder.Entity("NovoyaHope.Models.DataModels.ApplicationUser", b =>
+            modelBuilder.Entity("NovoyaHope.Models.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -472,7 +472,7 @@ namespace NovoyaHope.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("NovoyaHope.Models.DataModels.ApplicationUser", null)
+                    b.HasOne("NovoyaHope.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -481,7 +481,7 @@ namespace NovoyaHope.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("NovoyaHope.Models.DataModels.ApplicationUser", null)
+                    b.HasOne("NovoyaHope.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -496,7 +496,7 @@ namespace NovoyaHope.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("NovoyaHope.Models.DataModels.ApplicationUser", null)
+                    b.HasOne("NovoyaHope.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -505,7 +505,7 @@ namespace NovoyaHope.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("NovoyaHope.Models.DataModels.ApplicationUser", null)
+                    b.HasOne("NovoyaHope.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -536,7 +536,7 @@ namespace NovoyaHope.Migrations
 
             modelBuilder.Entity("NovoyaHope.Models.Survey", b =>
                 {
-                    b.HasOne("NovoyaHope.Models.DataModels.ApplicationUser", "Creator")
+                    b.HasOne("NovoyaHope.Models.ApplicationUser", "Creator")
                         .WithMany("CreatedSurveys")
                         .HasForeignKey("CreatorId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -553,7 +553,7 @@ namespace NovoyaHope.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("NovoyaHope.Models.DataModels.ApplicationUser", "User")
+                    b.HasOne("NovoyaHope.Models.ApplicationUser", "User")
                         .WithMany("Responses")
                         .HasForeignKey("UserId");
 
@@ -609,7 +609,7 @@ namespace NovoyaHope.Migrations
                     b.Navigation("SelectedOption");
                 });
 
-            modelBuilder.Entity("NovoyaHope.Models.DataModels.ApplicationUser", b =>
+            modelBuilder.Entity("NovoyaHope.Models.ApplicationUser", b =>
                 {
                     b.Navigation("CreatedSurveys");
 

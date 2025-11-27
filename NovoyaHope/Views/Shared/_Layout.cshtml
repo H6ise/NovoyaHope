@@ -44,6 +44,12 @@
                 <ul class="nav-links">
                     @if (User.Identity?.IsAuthenticated == true)
                     {
+                        var userManager = Context.RequestServices.GetService(typeof(Microsoft.AspNetCore.Identity.UserManager<NovoyaHope.Models.ApplicationUser>)) as Microsoft.AspNetCore.Identity.UserManager<NovoyaHope.Models.ApplicationUser>;
+                        var currentUser = await userManager.GetUserAsync(User);
+                        var displayName = !string.IsNullOrEmpty(currentUser?.FirstName) || !string.IsNullOrEmpty(currentUser?.LastName) 
+                            ? $"{currentUser.FirstName} {currentUser.LastName}".Trim() 
+                            : User.Identity.Name;
+                        
                         <li class="nav-item">
                             <a asp-controller="Home" asp-action="Index" class="nav-link">
                                 <i class="fas fa-home"></i>
@@ -63,15 +69,47 @@
                             </a>
                         </li>
                         <li class="nav-item dropdown">
-                            <a href="#" class="nav-link dropdown-toggle" id="userDropdown">
-                                <i class="fas fa-user-circle"></i>
-                                <span>@User.Identity.Name</span>
+                            <a href="#" class="nav-link user-profile-link dropdown-toggle" id="userDropdown">
+                                <div class="user-avatar-small">
+                                    @if (!string.IsNullOrEmpty(currentUser?.ProfileImagePath))
+                                    {
+                                        <img src="@currentUser.ProfileImagePath" alt="Avatar" />
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-user"></i>
+                                    }
+                                </div>
+                                <span class="user-name">@displayName</span>
                                 <i class="fas fa-chevron-down dropdown-arrow"></i>
                             </a>
-                            <div class="dropdown-menu" id="userDropdownMenu">
+                            <div class="dropdown-menu user-dropdown-menu" id="userDropdownMenu">
+                                <div class="dropdown-header">
+                                    <div class="user-avatar-large">
+                                        @if (!string.IsNullOrEmpty(currentUser?.ProfileImagePath))
+                                        {
+                                            <img src="@currentUser.ProfileImagePath" alt="Avatar" />
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-user"></i>
+                                        }
+                                    </div>
+                                    <div class="user-info">
+                                        <div class="user-display-name">@displayName</div>
+                                        <div class="user-email clickable-email" onclick="openUserInfoModal(event)" title="Нажмите для просмотра информации">
+                                            @User.Identity.Name
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="dropdown-divider"></div>
                                 <a asp-controller="Account" asp-action="Profile" class="dropdown-item">
                                     <i class="fas fa-user"></i>
-                                    Профиль
+                                    Мой профиль
+                                </a>
+                                <a asp-controller="Survey" asp-action="Index" class="dropdown-item">
+                                    <i class="fas fa-clipboard-list"></i>
+                                    Мои опросы
                                 </a>
                                 <a asp-controller="Account" asp-action="Settings" class="dropdown-item">
                                     <i class="fas fa-cog"></i>
@@ -112,6 +150,97 @@
             </div>
         </div>
     </nav>
+
+    <!-- User Info Modal -->
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        var userManager = Context.RequestServices.GetService(typeof(Microsoft.AspNetCore.Identity.UserManager<NovoyaHope.Models.ApplicationUser>)) as Microsoft.AspNetCore.Identity.UserManager<NovoyaHope.Models.ApplicationUser>;
+        var currentUser = await userManager.GetUserAsync(User);
+        
+        <div id="userInfoModal" class="user-info-modal">
+            <div class="user-info-modal-content">
+                <div class="user-info-modal-header">
+                    <h3>Информация о пользователе</h3>
+                    <button type="button" class="close-user-info-modal" onclick="closeUserInfoModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="user-info-modal-body">
+                    <div class="user-info-avatar-section">
+                        @if (!string.IsNullOrEmpty(currentUser?.ProfileImagePath))
+                        {
+                            <img src="@currentUser.ProfileImagePath" alt="Avatar" class="modal-user-avatar" />
+                        }
+                        else
+                        {
+                            <div class="modal-user-avatar-placeholder">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        }
+                    </div>
+                    
+                    <div class="user-info-details">
+                        <div class="user-info-item">
+                            <label><i class="fas fa-user"></i> Имя:</label>
+                            <span>@(string.IsNullOrEmpty(currentUser?.FirstName) ? "Не указано" : currentUser.FirstName)</span>
+                        </div>
+                        
+                        <div class="user-info-item">
+                            <label><i class="fas fa-user"></i> Фамилия:</label>
+                            <span>@(string.IsNullOrEmpty(currentUser?.LastName) ? "Не указано" : currentUser.LastName)</span>
+                        </div>
+                        
+                        <div class="user-info-item">
+                            <label><i class="fas fa-envelope"></i> Email:</label>
+                            <span class="copyable-text" onclick="copyToClipboard('@User.Identity.Name', this)" title="Нажмите для копирования">
+                                @User.Identity.Name
+                                <i class="fas fa-copy copy-icon"></i>
+                            </span>
+                        </div>
+                        
+                        <div class="user-info-item">
+                            <label><i class="fas fa-phone"></i> Телефон:</label>
+                            @if (!string.IsNullOrEmpty(currentUser?.PhoneNumber))
+                            {
+                                @if (currentUser.ShowPhoneToPublic)
+                                {
+                                    <span class="copyable-text" onclick="copyToClipboard('@currentUser.PhoneNumber', this)" title="Нажмите для копирования">
+                                        @currentUser.PhoneNumber
+                                        <i class="fas fa-copy copy-icon"></i>
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="private-info">
+                                        <i class="fas fa-lock"></i> Скрыт (виден только вам)
+                                    </span>
+                                }
+                            }
+                            else
+                            {
+                                <span>Не указан</span>
+                            }
+                        </div>
+                        
+                        <div class="user-info-item">
+                            <label><i class="fas fa-id-badge"></i> ID пользователя:</label>
+                            <span class="user-id">@currentUser?.Id</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="user-info-modal-footer">
+                    <a asp-controller="Account" asp-action="Profile" class="btn-modal-primary">
+                        <i class="fas fa-edit"></i> Редактировать профиль
+                    </a>
+                    <button type="button" class="btn-modal-secondary" onclick="closeUserInfoModal()">
+                        Закрыть
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
 
     <!-- Main Content -->
     <main class="main-content">
@@ -205,6 +334,63 @@
                 menu.classList.remove('show');
             }
         });
+
+        // User Info Modal functions
+        function openUserInfoModal(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const modal = document.getElementById('userInfoModal');
+            if (modal) {
+                modal.classList.add('show');
+                document.body.style.overflow = 'hidden';
+                
+                // Close dropdown menu
+                const dropdownMenu = document.getElementById('userDropdownMenu');
+                if (dropdownMenu) {
+                    dropdownMenu.classList.remove('show');
+                }
+            }
+        }
+
+        function closeUserInfoModal() {
+            const modal = document.getElementById('userInfoModal');
+            if (modal) {
+                modal.classList.remove('show');
+                document.body.style.overflow = '';
+            }
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('userInfoModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeUserInfoModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeUserInfoModal();
+            }
+        });
+
+        // Copy to clipboard function
+        function copyToClipboard(text, element) {
+            navigator.clipboard.writeText(text).then(function() {
+                // Show success feedback
+                const originalHTML = element.innerHTML;
+                element.innerHTML = text + ' <i class="fas fa-check" style="color: #4caf50;"></i>';
+                element.style.color = '#4caf50';
+                
+                setTimeout(function() {
+                    element.innerHTML = originalHTML;
+                    element.style.color = '';
+                }, 2000);
+            }).catch(function(err) {
+                console.error('Ошибка копирования: ', err);
+                alert('Не удалось скопировать в буфер обмена');
+            });
+        }
     </script>
 </body>
 </html>
