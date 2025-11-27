@@ -56,14 +56,28 @@ namespace NovoyaHope.Services
             survey.EndDate = model.EndDate;
             survey.IsPublished = model.IsPublished;
 
+            // Если это новый опрос, сначала сохраняем его, чтобы получить Id
+            if (survey.Id == 0)
+            {
+                await _context.SaveChangesAsync();
+            }
+
             // 3. Обновление Вопросов (Сложная логика синхронизации)
+            // Инициализируем коллекцию вопросов, если она null
+            if (survey.Questions == null)
+            {
+                survey.Questions = new List<Question>();
+            }
+
+            // Инициализируем список вопросов из модели, если он null
+            var questionsList = model.Questions ?? new List<SaveQuestionViewModel>();
 
             // Удаление вопросов, которые были удалены в конструкторе
-            var modelQuestionIds = model.Questions.Where(q => q.Id.HasValue).Select(q => q.Id.Value).ToList();
+            var modelQuestionIds = questionsList.Where(q => q.Id.HasValue).Select(q => q.Id.Value).ToList();
             var questionsToRemove = survey.Questions.Where(q => !modelQuestionIds.Contains(q.Id)).ToList();
             _context.Questions.RemoveRange(questionsToRemove);
 
-            foreach (var qModel in model.Questions)
+            foreach (var qModel in questionsList)
             {
                 Question question;
 
@@ -87,6 +101,12 @@ namespace NovoyaHope.Services
                 question.IsRequired = qModel.IsRequired;
 
                 // Обновление Вариантов Ответа (Сложная логика синхронизации)
+                // Инициализируем коллекцию опций, если она null
+                if (question.AnswerOptions == null)
+                {
+                    question.AnswerOptions = new List<AnswerOption>();
+                }
+                
                 // Удаление опций
                 var modelOptionIds = qModel.Options?.Where(o => o.Id.HasValue).Select(o => o.Id.Value).ToList() ?? new List<int>();
                 var optionsToRemove = question.AnswerOptions.Where(o => !modelOptionIds.Contains(o.Id)).ToList();
@@ -103,12 +123,17 @@ namespace NovoyaHope.Services
                             option = question.AnswerOptions.FirstOrDefault(o => o.Id == oModel.Id.Value);
                             if (option == null) continue;
                         }
-                        else
-                        {
-                            // Добавление новой опции
-                            option = new AnswerOption { QuestionId = question.Id };
-                            question.AnswerOptions.Add(option);
-                        }
+                else
+                {
+                    // Добавление новой опции
+                    // Инициализируем коллекцию опций, если она null
+                    if (question.AnswerOptions == null)
+                    {
+                        question.AnswerOptions = new List<AnswerOption>();
+                    }
+                    option = new AnswerOption { QuestionId = question.Id };
+                    question.AnswerOptions.Add(option);
+                }
 
                         option.Text = oModel.Text;
                         option.Order = oModel.Order;

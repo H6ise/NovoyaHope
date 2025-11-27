@@ -4,10 +4,12 @@ using Microsoft.AspNetCore.Identity;
 using NovoyaHope.Data;
 using NovoyaHope.Models;
 using NovoyaHope.Models.ViewModels;
+using NovoyaHope.Services;
 using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 
 namespace NovoyaHope.Controllers
 {
@@ -16,11 +18,13 @@ namespace NovoyaHope.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ISurveyService _surveyService;
 
-        public SurveyController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public SurveyController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, ISurveyService surveyService)
         {
             _context = context;
             _userManager = userManager;
+            _surveyService = surveyService;
         }
 
         // --- СПИСОК МОИХ ОПРОСОВ ---
@@ -80,23 +84,115 @@ namespace NovoyaHope.Controllers
             return View("Constructor", viewModel);
         }
 
-        // --- СОХРАНЕНИЕ / ОБНОВЛЕНИЕ ЧЕРЕЗ AJAX ---
+        // --- СОХРАНЕНИЕ / ОБНОВЛЕНИЕ ---
+
+        // POST /survey/save (обработка обычной формы)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Save(SaveSurveyViewModel model)
+        {
+            var userId = _userManager.GetUserId(User);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                // Если есть ошибки валидации, возвращаем обратно на страницу редактирования
+                return RedirectToAction(nameof(Edit), new { id = model.Id });
+            }
+
+            try
+            {
+                var surveyId = await _surveyService.SaveSurveyAsync(model, userId);
+                TempData["SuccessMessage"] = "Опросник успешно сохранен!";
+                return RedirectToAction(nameof(Edit), new { id = surveyId });
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
+            catch (System.Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Ошибка при сохранении: {ex.Message}";
+                return RedirectToAction(nameof(Edit), new { id = model.Id });
+            }
+        }
 
         // POST /api/surveys/save (используется AJAX из constructor.js)
         [HttpPost]
         [Route("api/surveys/save")]
         public async Task<IActionResult> SaveSurvey([FromBody] SaveSurveyViewModel model)
         {
-            if (!ModelState.IsValid)
+            // Логируем входящий запрос для отладки
+            var logger = HttpContext.RequestServices.GetService<ILogger<SurveyController>>();
+            logger?.LogInformation("SaveSurvey called. Model is null: {IsNull}", model == null);
+            
+            // Проверка модели
+            if (model == null)
             {
-                return BadRequest(ModelState);
+                logger?.LogWarning("Model is null. Content-Type: {ContentType}, ContentLength: {Length}", 
+                    Request.ContentType, Request.ContentLength);
+                
+                return BadRequest(new { success = false, message = "Данные не получены. Проверьте формат отправляемых данных." });
+            }
+            
+            logger?.LogInformation("Model received. Id: {Id}, Title: {Title}, Questions count: {Count}", 
+                model.Id, model.Title, model.Questions?.Count ?? 0);
+
+            var userId = _userManager.GetUserId(User);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { Success = false, Message = "Пользователь не авторизован." });
             }
 
-            // Здесь должна быть сложная логика CRUD для обновления Survey, Question и AnswerOption
-            // (обработка model.Id == null для добавления, model.Id != null для обновления)
+            // Проверка обязательных полей вручную для более понятных сообщений
+            if (string.IsNullOrWhiteSpace(model.Title))
+            {
+                return BadRequest(new { Success = false, Message = "Укажите заголовок опроса." });
+            }
 
-            await _context.SaveChangesAsync();
-            return Ok(new { Success = true, SurveyId = model.Id, Message = "Сохранено" });
+            // Инициализируем Questions, если null
+            if (model.Questions == null)
+            {
+                model.Questions = new List<SaveQuestionViewModel>();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                // Собираем все ошибки валидации в понятный формат
+                var errors = new List<string>();
+                foreach (var error in ModelState)
+                {
+                    if (error.Value.Errors.Count > 0)
+                    {
+                        foreach (var errorMessage in error.Value.Errors)
+                        {
+                            errors.Add($"{error.Key}: {errorMessage.ErrorMessage}");
+                        }
+                    }
+                }
+                return BadRequest(new { Success = false, Message = string.Join("; ", errors), Errors = ModelState });
+            }
+
+            try
+            {
+                // Используем SurveyService для сохранения опроса с вопросами и вариантами ответов
+                var surveyId = await _surveyService.SaveSurveyAsync(model, userId);
+                return Ok(new { Success = true, SurveyId = surveyId, Message = "Сохранено" });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid();
+            }
+            catch (System.Exception ex)
+            {
+                // Логируем полную ошибку для отладки
+                logger?.LogError(ex, "Ошибка при сохранении опроса. SurveyId: {SurveyId}, UserId: {UserId}", model.Id, userId);
+                
+                return BadRequest(new { Success = false, Message = $"Ошибка при сохранении: {ex.Message}", Exception = ex.GetType().Name });
+            }
         }
 
         // --- ПУБЛИКАЦИЯ ---
@@ -106,17 +202,30 @@ namespace NovoyaHope.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Publish(int id)
         {
+            // Проверка anti-forgery token выполняется автоматически через [ValidateAntiForgeryToken]
+            // Если токен невалиден, будет возвращена ошибка 400 до выполнения этого кода
+            
             var survey = await _context.Surveys.FindAsync(id);
             var userId = _userManager.GetUserId(User);
 
-            if (survey == null || survey.CreatorId != userId)
+            if (survey == null)
+            {
+                return BadRequest(new { success = false, message = "Опрос не найден." });
+            }
+
+            if (survey.CreatorId != userId)
             {
                 return Forbid();
             }
 
             if (!await _context.Questions.AnyAsync(q => q.SurveyId == id))
             {
-                return BadRequest(new { message = "Нельзя опубликовать пустой опрос. Добавьте хотя бы один вопрос." });
+                return BadRequest(new { success = false, message = "Нельзя опубликовать пустой опрос. Добавьте хотя бы один вопрос." });
+            }
+
+            if (survey.IsPublished)
+            {
+                return BadRequest(new { success = false, message = "Опрос уже опубликован." });
             }
 
             survey.IsPublished = true;

@@ -33,7 +33,7 @@
                 </div>
 
                 <div class="header-right">
-                    <button type="submit" class="btn-secondary" style="margin-right: 10px;">Сохранить</button>
+                    <button type="button" onclick="saveSurvey()" class="btn-secondary" style="margin-right: 10px;">Сохранить</button>
                     @if (Model.Survey.IsPublished)
                     {
                         <a asp-controller="Public" asp-action="ViewSurvey" asp-route-id="@Model.Survey.Id" target="_blank" 
@@ -192,6 +192,20 @@
 
     @section Scripts {
         <script>
+            // Показываем сообщения из TempData, если они есть
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <text>
+                alert('@Html.Raw(TempData["SuccessMessage"])');
+                </text>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <text>
+                alert('@Html.Raw(TempData["ErrorMessage"])');
+                </text>
+            }
+
             // JS-функция для переключения вкладок
             function switchTab(event, tabName) {
                 event.preventDefault();
@@ -203,27 +217,340 @@
                 event.target.classList.add('active');
             }
 
+            // JS-функция для сохранения опросника
+            function saveSurvey() {
+                // Собираем данные формы
+                const formData = collectFormData();
+                
+                // Валидация данных перед отправкой
+                if (!formData.Title || formData.Title.trim() === '') {
+                    showSaveMessage('Ошибка: укажите заголовок опроса', 'error');
+                    return;
+                }
+                
+                console.log('Отправляемые данные:', JSON.stringify(formData, null, 2));
+                
+                // Получаем токен из формы
+                var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                
+                // Если токен не найден в форме, пытаемся получить из cookie
+                if (!token) {
+                    var cookies = document.cookie.split(';');
+                    for (var i = 0; i < cookies.length; i++) {
+                        var cookie = cookies[i].trim();
+                        if (cookie.startsWith('__RequestVerificationToken=')) {
+                            token = cookie.substring('__RequestVerificationToken='.length);
+                            break;
+                        }
+                    }
+                }
+                
+                if (!token) {
+                    alert('Ошибка: не найден токен безопасности. Перезагрузите страницу и попробуйте снова.');
+                    return;
+                }
+
+                // Показываем индикатор загрузки
+                const saveButton = document.querySelector('button[onclick="saveSurvey()"]');
+                const originalText = saveButton ? saveButton.textContent : 'Сохранить';
+                if (saveButton) {
+                    saveButton.disabled = true;
+                    saveButton.textContent = 'Сохранение...';
+                }
+
+                // Отправляем данные через AJAX
+                fetch('/api/surveys/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(formData)
+                })
+                .then(async response => {
+                    const contentType = response.headers.get('content-type');
+                    console.log('Response status:', response.status, 'Content-Type:', contentType);
+                    
+                    if (contentType && contentType.includes('application/json')) {
+                        const data = await response.json();
+                        console.log('Response data:', data);
+                        return { ok: response.ok, status: response.status, data: data };
+                    } else {
+                        const text = await response.text();
+                        console.error('Non-JSON response:', text);
+                        throw new Error(text || `Ошибка сохранения: ${response.status} ${response.statusText}`);
+                    }
+                })
+                .then(result => {
+                    if (result.ok && result.data.Success) {
+                        // Показываем сообщение об успехе
+                        showSaveMessage('Опросник успешно сохранен!', 'success');
+                    } else {
+                        // Обрабатываем ошибки валидации
+                        let errorMessage = 'Ошибка при сохранении';
+                        if (result.data && result.data.Message) {
+                            errorMessage = result.data.Message;
+                        } else if (result.data && result.data.Errors) {
+                            // Пытаемся извлечь сообщения об ошибках из ModelState
+                            const errors = [];
+                            for (const key in result.data.Errors) {
+                                if (result.data.Errors[key] && result.data.Errors[key].Errors) {
+                                    result.data.Errors[key].Errors.forEach(err => {
+                                        if (err.ErrorMessage) {
+                                            errors.push(err.ErrorMessage);
+                                        }
+                                    });
+                                }
+                            }
+                            if (errors.length > 0) {
+                                errorMessage = errors.join('; ');
+                            }
+                        }
+                        throw new Error(errorMessage);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error details:', error);
+                    console.error('Error stack:', error.stack);
+                    const errorMessage = error.message || 'Неизвестная ошибка';
+                    showSaveMessage('Ошибка при сохранении: ' + errorMessage, 'error');
+                })
+                .finally(() => {
+                    // Восстанавливаем кнопку
+                    if (saveButton) {
+                        saveButton.disabled = false;
+                        saveButton.textContent = originalText;
+                    }
+                });
+            }
+
+            // Функция для отображения сообщений о сохранении
+            function showSaveMessage(message, type) {
+                // Удаляем предыдущее сообщение, если есть
+                const existingMessage = document.getElementById('save-message');
+                if (existingMessage) {
+                    existingMessage.remove();
+                }
+
+                // Создаем новое сообщение
+                const messageDiv = document.createElement('div');
+                messageDiv.id = 'save-message';
+                messageDiv.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 15px 20px;
+                    background-color: ${type === 'success' ? '#4caf50' : '#f44336'};
+                    color: white;
+                    border-radius: 4px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                    z-index: 10000;
+                    font-size: 14px;
+                    max-width: 300px;
+                    animation: slideIn 0.3s ease-out;
+                `;
+                messageDiv.textContent = message;
+
+                // Добавляем анимацию
+                const style = document.createElement('style');
+                style.textContent = `
+                    @@keyframes slideIn {
+                        from {
+                            transform: translateX(100%);
+                            opacity: 0;
+                        }
+                        to {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                    }
+                    @@keyframes slideOut {
+                        from {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                        to {
+                            transform: translateX(100%);
+                            opacity: 0;
+                        }
+                    }
+                `;
+                if (!document.querySelector('style[data-save-message]')) {
+                    style.setAttribute('data-save-message', 'true');
+                    document.head.appendChild(style);
+                }
+
+                document.body.appendChild(messageDiv);
+
+                // Автоматически удаляем сообщение через 3 секунды
+                setTimeout(() => {
+                    messageDiv.style.animation = 'slideOut 0.3s ease-out';
+                    setTimeout(() => {
+                        if (messageDiv.parentNode) {
+                            messageDiv.remove();
+                        }
+                    }, 300);
+                }, 3000);
+            }
+
+            // Функция для сбора данных формы и преобразования в JSON
+            function collectFormData() {
+                const form = document.getElementById('survey-form');
+                const formData = new FormData(form);
+                const surveyId = parseInt(form.querySelector('input[name="Survey.Id"]')?.value || '0');
+                
+                const data = {
+                    Id: surveyId || null,
+                    Title: form.querySelector('#survey-title-input')?.value || '',
+                    Description: form.querySelector('#survey-description-input')?.value || '',
+                    Type: 'Questionnaire', // Используем строковое значение enum
+                    IsPublished: false,
+                    IsAnonymous: true,
+                    Questions: []
+                };
+                
+                // Собираем вопросы
+                const questionBlocks = document.querySelectorAll('.question-block[data-question-id]');
+                let questionOrder = 0;
+                
+                questionBlocks.forEach(block => {
+                    const questionIdAttr = block.getAttribute('data-question-id');
+                    const questionId = questionIdAttr && questionIdAttr.startsWith('-') ? null : parseInt(questionIdAttr);
+                    const textInput = block.querySelector('.question-text-input');
+                    const typeSelect = block.querySelector('.question-type-select');
+                    const isRequired = block.querySelector('.required-toggle')?.checked || false;
+                    
+                    if (!textInput || !textInput.value.trim()) {
+                        return; // Пропускаем вопросы без текста
+                    }
+                    
+                    const questionType = typeSelect ? typeSelect.value : 'SingleChoice';
+                    
+                    const question = {
+                        Id: questionId || null,
+                        Order: questionOrder++,
+                        Text: textInput.value.trim(),
+                        Type: questionType, // ASP.NET Core автоматически преобразует строку в enum
+                        IsRequired: isRequired,
+                        Options: []
+                    };
+                    
+                    // Собираем варианты ответов
+                    const optionItems = block.querySelectorAll('.option-item[data-option-id]');
+                    let optionOrder = 0;
+                    
+                    optionItems.forEach(optionItem => {
+                        const optionIdAttr = optionItem.getAttribute('data-option-id');
+                        const optionId = optionIdAttr && optionIdAttr.startsWith('-') ? null : parseInt(optionIdAttr);
+                        const optionTextInput = optionItem.querySelector('.option-input');
+                        
+                        if (!optionTextInput || !optionTextInput.value.trim()) {
+                            return; // Пропускаем пустые варианты
+                        }
+                        
+                        question.Options.push({
+                            Id: optionId || null,
+                            Text: optionTextInput.value.trim(),
+                            Order: optionOrder++
+                        });
+                    });
+                    
+                    // Добавляем вопрос только если у него есть варианты ответов (для типов с выбором)
+                    // или если это текстовый вопрос
+                    const needsOptions = ['SingleChoice', 'MultipleChoice', 'Dropdown', 'Scale', 'Rating'].includes(questionType);
+                    if (!needsOptions || question.Options.length > 0) {
+                        data.Questions.push(question);
+                    }
+                });
+                
+                return data;
+            }
+            
             // JS-функция для публикации
             function publishSurvey(surveyId) {
                 if (confirm('Опубликовать эту форму? Она станет доступна по ссылке.')) {
-                    fetch(`/Survey/Publish/${surveyId}`, {
+                    // Сначала сохраняем данные формы
+                    const formData = collectFormData();
+                    
+                    // Получаем токен из формы
+                    var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                    
+                    // Если токен не найден в форме, пытаемся получить из cookie
+                    if (!token) {
+                        var cookies = document.cookie.split(';');
+                        for (var i = 0; i < cookies.length; i++) {
+                            var cookie = cookies[i].trim();
+                            if (cookie.startsWith('__RequestVerificationToken=')) {
+                                token = cookie.substring('__RequestVerificationToken='.length);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (!token) {
+                        alert('Ошибка: не найден токен безопасности. Перезагрузите страницу и попробуйте снова.');
+                        return;
+                    }
+                    
+                    // Сохраняем данные перед публикацией
+                    fetch('/api/surveys/save', {
                         method: 'POST',
                         headers: {
-                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': token
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify(formData)
+                    })
+                    .then(async response => {
+                        const contentType = response.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            const data = await response.json();
+                            return { ok: response.ok, data: data };
+                        } else {
+                            const text = await response.text();
+                            throw new Error(text || `Ошибка сохранения: ${response.status}`);
                         }
                     })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert(data.message);
+                    .then(saveResult => {
+                        if (!saveResult.ok || !saveResult.data.Success) {
+                            throw new Error(saveResult.data.Message || 'Ошибка при сохранении данных');
+                        }
+                        
+                        // После успешного сохранения публикуем
+                        return fetch(`/Survey/Publish/${surveyId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'RequestVerificationToken': token
+                            },
+                            credentials: 'include',
+                            body: '__RequestVerificationToken=' + encodeURIComponent(token)
+                        });
+                    })
+                    .then(async response => {
+                        const contentType = response.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            const data = await response.json();
+                            return { ok: response.ok, status: response.status, data: data };
+                        } else {
+                            const text = await response.text();
+                            console.error('Non-JSON response:', text);
+                            return { ok: false, status: response.status, data: { success: false, message: `Ошибка ${response.status}: ${response.statusText}` } };
+                        }
+                    })
+                    .then(result => {
+                        if (result.ok && result.data.success) {
+                            alert(result.data.message);
                             location.reload();
                         } else {
-                            alert(data.message || 'Ошибка при публикации');
+                            alert(result.data.message || 'Ошибка при публикации');
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        alert('Ошибка при публикации опроса');
+                        alert('Ошибка при публикации опроса: ' + (error.message || 'Неизвестная ошибка'));
                     });
                 }
             }
@@ -231,28 +558,57 @@
             // JS-функция для снятия с публикации
             function unpublishSurvey(surveyId) {
                 if (confirm('Снять форму с публикации? Она больше не будет доступна по ссылке.')) {
+                    // Получаем токен из формы
                     var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                    
+                    // Если токен не найден в форме, пытаемся получить из cookie
+                    if (!token) {
+                        var cookies = document.cookie.split(';');
+                        for (var i = 0; i < cookies.length; i++) {
+                            var cookie = cookies[i].trim();
+                            if (cookie.startsWith('__RequestVerificationToken=')) {
+                                token = cookie.substring('__RequestVerificationToken='.length);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (!token) {
+                        alert('Ошибка: не найден токен безопасности. Перезагрузите страницу и попробуйте снова.');
+                        return;
+                    }
                     
                     fetch(`/Survey/Unpublish/${surveyId}`, {
                         method: 'POST',
                         headers: {
-                            'RequestVerificationToken': token,
-                            'Content-Type': 'application/x-www-form-urlencoded'
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'RequestVerificationToken': token
                         },
+                        credentials: 'include', // Важно для отправки cookies
                         body: '__RequestVerificationToken=' + encodeURIComponent(token)
                     })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert(data.message);
+                    .then(async response => {
+                        const contentType = response.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            const data = await response.json();
+                            return { ok: response.ok, status: response.status, data: data };
+                        } else {
+                            const text = await response.text();
+                            console.error('Non-JSON response:', text);
+                            return { ok: false, status: response.status, data: { success: false, message: `Ошибка ${response.status}: ${response.statusText}` } };
+                        }
+                    })
+                    .then(result => {
+                        if (result.ok && result.data.success) {
+                            alert(result.data.message);
                             location.reload();
                         } else {
-                            alert(data.message || 'Ошибка');
+                            alert(result.data.message || 'Ошибка при снятии с публикации');
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        alert('Ошибка');
+                        alert('Ошибка при снятии с публикации: ' + (error.message || 'Неизвестная ошибка'));
                     });
                 }
             }

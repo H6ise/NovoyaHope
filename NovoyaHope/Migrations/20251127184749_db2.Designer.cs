@@ -12,8 +12,8 @@ using NovoyaHope.Data;
 namespace NovoyaHope.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251125195020_db1")]
-    partial class db1
+    [Migration("20251127184749_db2")]
+    partial class db2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -159,6 +159,33 @@ namespace NovoyaHope.Migrations
                     b.ToTable("AspNetUserTokens", "Identity");
                 });
 
+            modelBuilder.Entity("NovoyaHope.Models.Answer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("QuestionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ResponseId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("ResponseId");
+
+                    b.ToTable("Answer", "Identity");
+                });
+
             modelBuilder.Entity("NovoyaHope.Models.AnswerOption", b =>
                 {
                     b.Property<int>("Id")
@@ -203,6 +230,12 @@ namespace NovoyaHope.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("FirstName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
@@ -226,8 +259,14 @@ namespace NovoyaHope.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("ProfileImagePath")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("ShowPhoneToPublic")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
@@ -247,6 +286,48 @@ namespace NovoyaHope.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("User", "Identity");
+                });
+
+            modelBuilder.Entity("NovoyaHope.Models.Media", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("QuestionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SurveyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("SurveyId");
+
+                    b.ToTable("Media", "Identity");
                 });
 
             modelBuilder.Entity("NovoyaHope.Models.Question", b =>
@@ -278,6 +359,36 @@ namespace NovoyaHope.Migrations
                     b.HasIndex("SurveyId");
 
                     b.ToTable("Questions", "Identity");
+                });
+
+            modelBuilder.Entity("NovoyaHope.Models.Section", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SurveyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SurveyId");
+
+                    b.ToTable("Sections", "Identity");
                 });
 
             modelBuilder.Entity("NovoyaHope.Models.Survey", b =>
@@ -447,7 +558,6 @@ namespace NovoyaHope.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("TextAnswer")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -512,6 +622,25 @@ namespace NovoyaHope.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("NovoyaHope.Models.Answer", b =>
+                {
+                    b.HasOne("NovoyaHope.Models.Question", "Question")
+                        .WithMany("Answers")
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("NovoyaHope.Models.SurveyResponse", "Response")
+                        .WithMany()
+                        .HasForeignKey("ResponseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+
+                    b.Navigation("Response");
+                });
+
             modelBuilder.Entity("NovoyaHope.Models.AnswerOption", b =>
                 {
                     b.HasOne("NovoyaHope.Models.Question", "Question")
@@ -523,10 +652,39 @@ namespace NovoyaHope.Migrations
                     b.Navigation("Question");
                 });
 
+            modelBuilder.Entity("NovoyaHope.Models.Media", b =>
+                {
+                    b.HasOne("NovoyaHope.Models.Question", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("NovoyaHope.Models.Survey", "Survey")
+                        .WithMany()
+                        .HasForeignKey("SurveyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+
+                    b.Navigation("Survey");
+                });
+
             modelBuilder.Entity("NovoyaHope.Models.Question", b =>
                 {
                     b.HasOne("NovoyaHope.Models.Survey", "Survey")
                         .WithMany("Questions")
+                        .HasForeignKey("SurveyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Survey");
+                });
+
+            modelBuilder.Entity("NovoyaHope.Models.Section", b =>
+                {
+                    b.HasOne("NovoyaHope.Models.Survey", "Survey")
+                        .WithMany()
                         .HasForeignKey("SurveyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -619,6 +777,8 @@ namespace NovoyaHope.Migrations
             modelBuilder.Entity("NovoyaHope.Models.Question", b =>
                 {
                     b.Navigation("AnswerOptions");
+
+                    b.Navigation("Answers");
                 });
 
             modelBuilder.Entity("NovoyaHope.Models.Survey", b =>

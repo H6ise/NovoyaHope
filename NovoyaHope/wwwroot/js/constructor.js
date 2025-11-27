@@ -5,9 +5,24 @@ let newSectionCounter = -1;
 let newMediaCounter = -1;
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Constructor JavaScript loaded.');
     setupBlockActivation();
     setupFAB();
+    
+    // Делаем функции глобально доступными
+    window.addNewQuestion = addNewQuestion;
+    window.addSection = addSection;
+    window.addImage = addImage;
+    window.addVideo = addVideo;
+    window.addTextBlock = addTextBlock;
+    window.toggleFabMenu = toggleFabMenu;
+    window.deleteQuestion = deleteQuestion;
+    window.duplicateQuestion = duplicateQuestion;
+    window.deleteOption = deleteOption;
+    window.addOptionToQuestion = addOptionToQuestion;
+    window.changeQuestionType = changeQuestionType;
+    window.deleteElement = deleteElement;
+    window.handleImageUpload = handleImageUpload;
+    window.resetImageUpload = resetImageUpload;
 });
 
 // ===========================================
@@ -63,11 +78,22 @@ function setupBlockActivation() {
 // ===========================================
 
 // Генерирует HTML для нового варианта ответа (option)
-function getOptionHtml(questionId, text = 'Вариант', isOther = false) {
+function getOptionHtml(questionId, text = 'Вариант', isOther = false, questionType = 'SingleChoice') {
     const tempOptionId = newOptionCounter--; // Используем отрицательный ID для временных опций
 
     // Тип инпута (radio или checkbox) будет определен функцией changeQuestionType
-    const inputType = document.querySelector(`.question-block[data-question-id="${questionId}"] .question-type-select`).value === 'MultipleChoice' ? 'checkbox' : 'radio';
+    // Сначала пытаемся получить тип из DOM, если элемент существует
+    let inputType = 'radio';
+    const questionBlock = document.querySelector(`.question-block[data-question-id="${questionId}"]`);
+    if (questionBlock) {
+        const typeSelect = questionBlock.querySelector('.question-type-select');
+        if (typeSelect) {
+            inputType = typeSelect.value === 'MultipleChoice' ? 'checkbox' : 'radio';
+        }
+    } else {
+        // Если блок не существует (создание нового), используем переданный тип
+        inputType = questionType === 'MultipleChoice' ? 'checkbox' : 'radio';
+    }
 
     const baseHtml = `
         <div class="option-item" data-option-id="${tempOptionId}">
@@ -90,7 +116,7 @@ function getOptionHtml(questionId, text = 'Вариант', isOther = false) {
 
 // Генерирует HTML для нового блока вопроса
 function getNewQuestionHtml(tempId) {
-    const defaultOptionHtml = getOptionHtml(tempId, 'Вариант 1');
+    const defaultOptionHtml = getOptionHtml(tempId, 'Вариант 1', false, 'SingleChoice');
 
     return `
     <div class="question-block active" data-question-id="${tempId}" data-is-new="true">
@@ -144,12 +170,20 @@ function getNewQuestionHtml(tempId) {
 // ===========================================
 
 function addNewQuestion() {
+    // Закрываем FAB меню
+    closeFabMenu();
+    
     // 1. Снимаем активность со всех блоков
     document.querySelectorAll('.question-block').forEach(block => block.classList.remove('active'));
 
     // 2. Генерируем новый временный ID
     const tempId = newQuestionCounter--;
+    
     const container = document.getElementById('questions-container');
+    if (!container) {
+        console.error('Container not found!');
+        return;
+    }
 
     // 3. Находим блок заголовка, чтобы вставить новый вопрос после него
     const headerBlock = container.querySelector('.question-block:first-child');
@@ -171,7 +205,10 @@ function addNewQuestion() {
     setupBlockActivation(); // Перенастраиваем слушателей кликов
 
     // Дополнительный шаг: фокусируемся на поле ввода вопроса
-    insertedBlock.querySelector('.question-text-input').focus();
+    const textInput = insertedBlock.querySelector('.question-text-input');
+    if (textInput) {
+        textInput.focus();
+    }
 }
 
 // ===========================================
@@ -327,7 +364,7 @@ function changeQuestionType(selectElement, questionId) {
         const icon = type === 'Dropdown' ? '▼' : '';
 
         defaultOptions.forEach((text, index) => {
-            optionsHtml += getOptionHtml(questionId, text);
+            optionsHtml += getOptionHtml(questionId, text, false, type);
         });
 
         // Для выпадающего списка показываем другой вид

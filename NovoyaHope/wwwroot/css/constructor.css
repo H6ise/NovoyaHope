@@ -431,6 +431,7 @@
     font-size: 0.9rem;
     color: #5f6368;
     cursor: pointer;
+    -webkit-user-select: none;
     user-select: none;
 }
 

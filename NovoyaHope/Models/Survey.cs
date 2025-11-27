@@ -12,8 +12,8 @@ namespace NovoyaHope.Models
     public class Survey
     {
         public int Id { get; set; }
-        public string Title { get; set; }
-        public string Description { get; set; }
+        public required string Title { get; set; }
+        public required string Description { get; set; }
 
         // Настройки
         public SurveyType Type { get; set; }
@@ -23,7 +23,7 @@ namespace NovoyaHope.Models
         public DateTime? EndDate { get; set; } // Опциональная дата окончания
 
         // Связь с создателем
-        public string CreatorId { get; set; }
+        public required string CreatorId { get; set; }
         public ApplicationUser? Creator { get; set; }
 
         // Навигационные свойства
