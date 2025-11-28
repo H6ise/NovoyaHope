@@ -208,7 +208,8 @@ namespace NovoyaHope.Controllers
                                 var userAnswer = new UserAnswer
                                 {
                                     QuestionId = questionId,
-                                    SelectedOptionId = selectedOptionId
+                                    SelectedOptionId = selectedOptionId,
+                                    TextAnswer = null // Явно устанавливаем null для вопросов с вариантами ответов
                                 };
                                 userAnswers.Add(userAnswer);
                             }
@@ -227,7 +228,8 @@ namespace NovoyaHope.Controllers
                                     var userAnswer = new UserAnswer
                                     {
                                         QuestionId = questionId,
-                                        SelectedOptionId = optionId
+                                        SelectedOptionId = optionId,
+                                        TextAnswer = null // Явно устанавливаем null для вопросов с вариантами ответов
                                     };
                                     userAnswers.Add(userAnswer);
                                 }

@@ -96,6 +96,11 @@ namespace NovoyaHope.Data
                 .WithMany()
                 .HasForeignKey(m => m.QuestionId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            // --- Настройка для UserAnswer ---
+            builder.Entity<UserAnswer>()
+                .Property(ua => ua.TextAnswer)
+                .IsRequired(false); // Явно указываем, что TextAnswer может быть null
         }
     }
 }
