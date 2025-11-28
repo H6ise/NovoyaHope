@@ -148,11 +148,11 @@ namespace NovoyaHope.Controllers
             {
                 SurveyId = model.SurveyId,
                 SubmissionDate = DateTime.UtcNow,
-                UserId = userId,
-                UserAnswers = new List<UserAnswer>()
+                UserId = userId
             };
 
             // 4. Обработка всех ответов
+            var userAnswers = new List<UserAnswer>();
             if (model.Answers != null)
             {
                 foreach (var answerPair in model.Answers)
@@ -193,7 +193,7 @@ namespace NovoyaHope.Controllers
                                 QuestionId = questionId,
                                 TextAnswer = answerData.TextAnswer.Trim()
                             };
-                            responseEntry.UserAnswers.Add(userAnswer);
+                            userAnswers.Add(userAnswer);
                         }
                     }
                     // Обработка одиночного выбора (Radio) или шкалы
@@ -210,7 +210,7 @@ namespace NovoyaHope.Controllers
                                     QuestionId = questionId,
                                     SelectedOptionId = selectedOptionId
                                 };
-                                responseEntry.UserAnswers.Add(userAnswer);
+                                userAnswers.Add(userAnswer);
                             }
                         }
                     }
@@ -229,7 +229,7 @@ namespace NovoyaHope.Controllers
                                         QuestionId = questionId,
                                         SelectedOptionId = optionId
                                     };
-                                    responseEntry.UserAnswers.Add(userAnswer);
+                                    userAnswers.Add(userAnswer);
                                 }
                             }
                         }
@@ -241,7 +241,16 @@ namespace NovoyaHope.Controllers
             if (ModelState.IsValid)
             {
                 _context.SurveyResponses.Add(responseEntry);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(); // Сохраняем SurveyResponse, чтобы получить Id
+
+                // Устанавливаем ResponseId для всех UserAnswer
+                foreach (var userAnswer in userAnswers)
+                {
+                    userAnswer.ResponseId = responseEntry.Id;
+                    _context.UserAnswers.Add(userAnswer);
+                }
+                
+                await _context.SaveChangesAsync(); // Сохраняем UserAnswer
                 return RedirectToAction(nameof(ThankYou));
             }
             else

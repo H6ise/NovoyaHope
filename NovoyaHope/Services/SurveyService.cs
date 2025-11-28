@@ -41,6 +41,8 @@ namespace NovoyaHope.Services
                 // СОЗДАНИЕ
                 survey = new Survey
                 {
+                    Title = string.Empty,
+                    Description = string.Empty,
                     CreatorId = userId,
                     CreatedDate = DateTime.UtcNow,
                     Questions = new List<Question>()

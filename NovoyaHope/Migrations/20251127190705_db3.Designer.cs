@@ -12,8 +12,8 @@ using NovoyaHope.Data;
 namespace NovoyaHope.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251127184749_db2")]
-    partial class db2
+    [Migration("20251127190705_db3")]
+    partial class db3
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
