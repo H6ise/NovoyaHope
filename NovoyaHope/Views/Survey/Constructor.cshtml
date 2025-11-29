@@ -21,14 +21,21 @@
             <div class="editor-header-inner">
 
                 <div class="header-left">
-                    <i class="fas fa-eye header-icon" title="Предпросмотр"></i>
-                    <i class="fas fa-palette header-icon" title="Настроить тему"></i>
-                    <i class="fas fa-cog header-icon" title="Настройки"></i>
+                    <i class="fas fa-eye header-icon" id="preview-icon" title="Предпросмотр" onclick="openPreview()"></i>
+                    <i class="fas fa-palette header-icon" id="theme-toggle" title="Настроить тему" onclick="toggleThemePanel()"></i>                    
+                    <div class="undo-redo-buttons">
+                        <button type="button" class="header-icon-btn" id="undo-btn" title="Отменить (Ctrl+Z)" onclick="undoAction()" disabled>
+                            <i class="fas fa-undo"></i>
+                        </button>
+                        <button type="button" class="header-icon-btn" id="redo-btn" title="Повторить (Ctrl+Y)" onclick="redoAction()" disabled>
+                            <i class="fas fa-redo"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="tabs-nav">
                     <a href="#" class="tab-link active" onclick="switchTab(event, 'questions')">Вопросы</a>
-                    <a asp-controller="Survey" asp-action="Results" asp-route-surveyId="@Model.Survey.Id" class="tab-link">Ответы</a>
+                    <a href="#" class="tab-link" onclick="switchTab(event, 'answers')">Ответы</a>
                     <a href="#" class="tab-link" onclick="switchTab(event, 'settings')">Настройки</a>
                 </div>
 
@@ -37,9 +44,7 @@
                     @if (Model.Survey.IsPublished)
                     {
                         <a asp-controller="Public" asp-action="ViewSurvey" asp-route-id="@Model.Survey.Id" target="_blank" 
-                           class="btn-secondary" style="margin-right: 10px; text-decoration: none; display: inline-block;">🔗 Открыть</a>
-                        <a asp-action="Results" asp-route-id="@Model.Survey.Id" 
-                           class="btn-secondary" style="margin-right: 10px; text-decoration: none; display: inline-block;">📊 Ответы</a>
+                           class="btn-secondary" style="margin-right: 10px; text-decoration: none; display: inline-block;">🔗 Открыть</a>                        
                         <button type="button" onclick="unpublishSurvey(@Model.Survey.Id)" class="btn-secondary" style="background-color: #f5faf5; color: #2e7d32;">
                             Снять с публикации
                         </button>
@@ -178,7 +183,179 @@
                     ➕
                 </button>
             </div>
-        </div>
+            </div>
+
+            <!-- Вкладка Ответы -->
+            <div id="tab-answers" class="tab-content" style="display: none;">
+                <div class="answers-container">
+                    @if (Model.ResultsData == null || Model.ResultsData.TotalResponses == 0)
+                    {
+                        <div class="answers-empty-state">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+                            <h3 class="empty-state-title">Пока нет ответов</h3>
+                            <p class="empty-state-text">
+                                Когда пользователи начнут проходить ваш опрос, результаты появятся здесь.
+                            </p>
+                            @if (!Model.Survey.IsPublished)
+                            {
+                                <div class="empty-state-action">
+                                    <button type="button" onclick="publishSurvey(@Model.Survey.Id)" class="btn-publish-empty">
+                                        <i class="fas fa-paper-plane"></i>
+                                        Опубликовать опрос
+                                    </button>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="empty-state-link">
+                                    <a asp-controller="Public" asp-action="ViewSurvey" asp-route-id="@Model.Survey.Id" target="_blank" class="link-view-survey">
+                                        <i class="fas fa-external-link-alt"></i>
+                                        Открыть опрос
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Заголовок с статистикой -->
+                        <div class="answers-header">
+                            <div class="answers-header-content">
+                                <h2 class="answers-title">@Model.ResultsData.SurveyTitle</h2>
+                                <div class="answers-stats">
+                                    <div class="stat-item">
+                                        <i class="fas fa-users"></i>
+                                        <span class="stat-value">@Model.ResultsData.TotalResponses</span>
+                                        <span class="stat-label">ответов</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <i class="fas fa-calendar"></i>
+                                        <span class="stat-value">@Model.ResultsData.CreationDate.ToString("dd.MM.yyyy")</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="answers-header-actions">
+                                <button type="button" class="btn-export" onclick="exportResponses()" title="Экспорт ответов">
+                                    <i class="fas fa-download"></i>
+                                    Экспорт
+                                </button>
+                                <a asp-controller="Public" asp-action="ViewSurvey" asp-route-id="@Model.Survey.Id" target="_blank" class="btn-view-survey">
+                                    <i class="fas fa-external-link-alt"></i>
+                                    Открыть опрос
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Результаты по вопросам -->
+                        <div class="answers-content">
+                            @foreach (var questionResult in Model.ResultsData.QuestionResults)
+                            {
+                                <div class="answer-question-card">
+                                    <h3 class="answer-question-title">@questionResult.Text</h3>
+
+                                    @if (questionResult.Type == QuestionType.ShortText || questionResult.Type == QuestionType.ParagraphText)
+                                    {
+                                        <!-- Текстовые ответы -->
+                                        <div class="text-answers-list">
+                                            @if (questionResult.TextAnswers != null && questionResult.TextAnswers.Any())
+                                            {
+                                                <div class="text-answers-scroll">
+                                                    @foreach (var textAnswer in questionResult.TextAnswers)
+                                                    {
+                                                        <div class="text-answer-item">
+                                                            <i class="fas fa-quote-left"></i>
+                                                            <span>@textAnswer</span>
+                                                        </div>
+                                                    }
+                                                </div>
+                                                <div class="text-answers-count">
+                                                    Всего ответов: @questionResult.TextAnswers.Count
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="no-answers">
+                                                    <i class="fas fa-inbox"></i>
+                                                    <span>Нет ответов</span>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else if (questionResult.Type == QuestionType.SingleChoice || questionResult.Type == QuestionType.MultipleChoice)
+                                    {
+                                        <!-- Ответы с выбором вариантов -->
+                                        <div class="choice-answers">
+                                            @if (questionResult.OptionTexts != null && questionResult.OptionTexts.Any())
+                                            {
+                                                var totalVotes = questionResult.OptionCounts.Values.Sum();
+                                                @foreach (var option in questionResult.OptionTexts)
+                                                {
+                                                    var count = questionResult.OptionCounts.ContainsKey(option.Key) ? questionResult.OptionCounts[option.Key] : 0;
+                                                    var percentage = totalVotes > 0 ? (count * 100.0 / totalVotes) : 0;
+                                                    
+                                                    <div class="choice-answer-item">
+                                                        <div class="choice-answer-header">
+                                                            <span class="choice-answer-text">@option.Value</span>
+                                                            <span class="choice-answer-stats">@count (@percentage.ToString("F1"))%</span>
+                                                        </div>
+                                                        <div class="choice-answer-bar">
+                                                            <div class="choice-answer-bar-fill" style="width: @percentage%"></div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                                <div class="choice-answers-total">
+                                                    Всего ответов: @totalVotes
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else if (questionResult.Type == QuestionType.Scale)
+                                    {
+                                        <!-- Шкала -->
+                                        <div class="scale-answers">
+                                            <div class="scale-average">
+                                                <div class="scale-average-value">@questionResult.AverageScore.ToString("F2")</div>
+                                                <div class="scale-average-label">Средний балл</div>
+                                            </div>
+                                            
+                                            @if (questionResult.OptionTexts != null && questionResult.OptionTexts.Any())
+                                            {
+                                                var totalVotes = questionResult.OptionCounts.Values.Sum();
+                                                <div class="scale-distribution">
+                                                    @foreach (var option in questionResult.OptionTexts.OrderBy(o => o.Value))
+                                                    {
+                                                        var count = questionResult.OptionCounts.ContainsKey(option.Key) ? questionResult.OptionCounts[option.Key] : 0;
+                                                        var percentage = totalVotes > 0 ? (count * 100.0 / totalVotes) : 0;
+                                                        
+                                                        <div class="scale-item">
+                                                            <div class="scale-item-header">
+                                                                <span class="scale-item-label">@option.Value</span>
+                                                                <span class="scale-item-count">@count</span>
+                                                            </div>
+                                                            <div class="scale-item-bar">
+                                                                <div class="scale-item-bar-fill" style="width: @percentage%"></div>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="no-answers">
+                                            <i class="fas fa-info-circle"></i>
+                                            <span>Тип вопроса не поддерживает отображение статистики</span>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
 
             <div id="tab-settings" class="tab-content" style="display: none;">
                 <div class="settings-container">
@@ -367,6 +544,189 @@
             </div>
 
         </div>
+
+        <!-- Боковая панель настроек темы -->
+        <div id="theme-panel" class="theme-panel">
+            <div class="theme-panel-header">
+                <h3 class="theme-panel-title">Тема</h3>
+                <button type="button" class="theme-panel-close" onclick="toggleThemePanel()" aria-label="Закрыть">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="theme-panel-content">
+                <!-- Стиль текста -->
+                <div class="theme-section">
+                    <h4 class="theme-section-title">Стиль текста</h4>
+                    
+                    <div class="theme-option">
+                        <label class="theme-option-label">Верхний колонтитул</label>
+                        <div class="theme-option-controls">
+                            <select name="Survey.HeaderFontFamily" id="headerFontFamily" class="theme-select" onchange="updateThemePreview()">
+                                @{
+                                    var headerFont = Model.Survey.HeaderFontFamily ?? "Courier New";
+                                }
+                                <option value="Courier New" selected="@(headerFont == "Courier New")">Courier New</option>
+                                <option value="Roboto" selected="@(headerFont == "Roboto")">Roboto</option>
+                                <option value="Arial" selected="@(headerFont == "Arial")">Arial</option>
+                                <option value="Times New Roman" selected="@(headerFont == "Times New Roman")">Times New Roman</option>
+                                <option value="Georgia" selected="@(headerFont == "Georgia")">Georgia</option>
+                            </select>
+                            <input type="number" name="Survey.HeaderFontSize" id="headerFontSize" class="theme-input-number" 
+                                   value="@(Model.Survey.HeaderFontSize ?? 24)" min="10" max="72" onchange="updateThemePreview()">
+                        </div>
+                    </div>
+
+                    <div class="theme-option">
+                        <label class="theme-option-label">Вопрос</label>
+                        <div class="theme-option-controls">
+                            <select name="Survey.QuestionFontFamily" id="questionFontFamily" class="theme-select" onchange="updateThemePreview()">
+                                @{
+                                    var questionFont = Model.Survey.QuestionFontFamily ?? "Roboto";
+                                }
+                                <option value="Roboto" selected="@(questionFont == "Roboto")">Roboto</option>
+                                <option value="Courier New" selected="@(questionFont == "Courier New")">Courier New</option>
+                                <option value="Arial" selected="@(questionFont == "Arial")">Arial</option>
+                                <option value="Times New Roman" selected="@(questionFont == "Times New Roman")">Times New Roman</option>
+                                <option value="Georgia" selected="@(questionFont == "Georgia")">Georgia</option>
+                            </select>
+                            <input type="number" name="Survey.QuestionFontSize" id="questionFontSize" class="theme-input-number" 
+                                   value="@(Model.Survey.QuestionFontSize ?? 12)" min="8" max="48" onchange="updateThemePreview()">
+                        </div>
+                    </div>
+
+                    <div class="theme-option">
+                        <label class="theme-option-label">Текст</label>
+                        <div class="theme-option-controls">
+                            <select name="Survey.TextFontFamily" id="textFontFamily" class="theme-select" onchange="updateThemePreview()">
+                                @{
+                                    var textFont = Model.Survey.TextFontFamily ?? "Roboto";
+                                }
+                                <option value="Roboto" selected="@(textFont == "Roboto")">Roboto</option>
+                                <option value="Courier New" selected="@(textFont == "Courier New")">Courier New</option>
+                                <option value="Arial" selected="@(textFont == "Arial")">Arial</option>
+                                <option value="Times New Roman" selected="@(textFont == "Times New Roman")">Times New Roman</option>
+                                <option value="Georgia" selected="@(textFont == "Georgia")">Georgia</option>
+                            </select>
+                            <input type="number" name="Survey.TextFontSize" id="textFontSize" class="theme-input-number" 
+                                   value="@(Model.Survey.TextFontSize ?? 11)" min="8" max="48" onchange="updateThemePreview()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Верхний колонтитул -->
+                <div class="theme-section">
+                    <h4 class="theme-section-title">Верхний колонтитул</h4>
+                    <div class="theme-image-upload">
+                        <input type="file" id="headerImageInput" accept="image/*" style="display: none;" onchange="handleHeaderImageUpload(event)">
+                        <button type="button" class="theme-image-button" onclick="document.getElementById('headerImageInput').click()">
+                            <i class="fas fa-image"></i>
+                            Выберите изображение
+                        </button>
+                        @if (!string.IsNullOrEmpty(Model.Survey.HeaderImagePath))
+                        {
+                            <div class="theme-image-preview" id="headerImagePreview">
+                                <img src="@Model.Survey.HeaderImagePath" alt="Header">
+                                <button type="button" class="theme-image-remove" onclick="removeHeaderImage()">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <input type="hidden" name="Survey.HeaderImagePath" id="headerImagePath" value="@Model.Survey.HeaderImagePath">
+                        }
+                        else
+                        {
+                            <div class="theme-image-preview" id="headerImagePreview" style="display: none;"></div>
+                            <input type="hidden" name="Survey.HeaderImagePath" id="headerImagePath" value="">
+                        }
+                    </div>
+                </div>
+
+                <!-- Цвет -->
+                <div class="theme-section">
+                    <h4 class="theme-section-title">Цвет</h4>
+                    <div class="theme-color-grid">
+                        <div class="theme-color-item" data-color="#673AB7" onclick="selectThemeColor('#673AB7')" 
+                             style="background-color: #673AB7;" @(Model.Survey.ThemeColor == "#673AB7" ? "data-selected='true'" : "")>
+                            @if (Model.Survey.ThemeColor == "#673AB7")
+                            {
+                                <i class="fas fa-check"></i>
+                            }
+                        </div>
+                        <div class="theme-color-item" data-color="#E91E63" onclick="selectThemeColor('#E91E63')" 
+                             style="background-color: #E91E63;" @(Model.Survey.ThemeColor == "#E91E63" ? "data-selected='true'" : "")>
+                            @if (Model.Survey.ThemeColor == "#E91E63")
+                            {
+                                <i class="fas fa-check"></i>
+                            }
+                        </div>
+                        <div class="theme-color-item" data-color="#2196F3" onclick="selectThemeColor('#2196F3')" 
+                             style="background-color: #2196F3;" @(Model.Survey.ThemeColor == "#2196F3" ? "data-selected='true'" : "")>
+                            @if (Model.Survey.ThemeColor == "#2196F3")
+                            {
+                                <i class="fas fa-check"></i>
+                            }
+                        </div>
+                        <div class="theme-color-item" data-color="#4CAF50" onclick="selectThemeColor('#4CAF50')" 
+                             style="background-color: #4CAF50;" @(Model.Survey.ThemeColor == "#4CAF50" ? "data-selected='true'" : "")>
+                            @if (Model.Survey.ThemeColor == "#4CAF50")
+                            {
+                                <i class="fas fa-check"></i>
+                            }
+                        </div>
+                        <div class="theme-color-item" data-color="#FF9800" onclick="selectThemeColor('#FF9800')" 
+                             style="background-color: #FF9800;" @(Model.Survey.ThemeColor == "#FF9800" ? "data-selected='true'" : "")>
+                            @if (Model.Survey.ThemeColor == "#FF9800")
+                            {
+                                <i class="fas fa-check"></i>
+                            }
+                        </div>
+                        <div class="theme-color-item" data-color="#9C27B0" onclick="selectThemeColor('#9C27B0')" 
+                             style="background-color: #9C27B0;" @(Model.Survey.ThemeColor == "#9C27B0" ? "data-selected='true'" : "")>
+                            @if (Model.Survey.ThemeColor == "#9C27B0")
+                            {
+                                <i class="fas fa-check"></i>
+                            }
+                        </div>
+                        <div class="theme-color-item" data-color="#F44336" onclick="selectThemeColor('#F44336')" 
+                             style="background-color: #F44336;" @(Model.Survey.ThemeColor == "#F44336" ? "data-selected='true'" : "")>
+                            @if (Model.Survey.ThemeColor == "#F44336")
+                            {
+                                <i class="fas fa-check"></i>
+                            }
+                        </div>
+                        <div class="theme-color-item" data-color="#00BCD4" onclick="selectThemeColor('#00BCD4')" 
+                             style="background-color: #00BCD4;" @(Model.Survey.ThemeColor == "#00BCD4" ? "data-selected='true'" : "")>
+                            @if (Model.Survey.ThemeColor == "#00BCD4")
+                            {
+                                <i class="fas fa-check"></i>
+                            }
+                        </div>
+                        <button type="button" class="theme-color-add" onclick="openColorPicker()" title="Добавить цвет">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <input type="hidden" name="Survey.ThemeColor" id="themeColor" value="@(Model.Survey.ThemeColor ?? "#673AB7")">
+                </div>
+
+                <!-- Фон -->
+                <div class="theme-section">
+                    <h4 class="theme-section-title">Фон</h4>
+                    <div class="theme-background-options">
+                        <div class="theme-background-item @(Model.Survey.BackgroundColor == "#F3E5F5" ? "active" : "")" 
+                             data-color="#F3E5F5" onclick="selectBackgroundColor('#F3E5F5')" style="background-color: #F3E5F5;"></div>
+                        <div class="theme-background-item @(Model.Survey.BackgroundColor == "#FFFFFF" ? "active" : "")" 
+                             data-color="#FFFFFF" onclick="selectBackgroundColor('#FFFFFF')" style="background-color: #FFFFFF; border: 1px solid #ddd;"></div>
+                        <div class="theme-background-item @(Model.Survey.BackgroundColor == "#F5F5F5" ? "active" : "")" 
+                             data-color="#F5F5F5" onclick="selectBackgroundColor('#F5F5F5')" style="background-color: #F5F5F5;"></div>
+                    </div>
+                    <input type="hidden" name="Survey.BackgroundColor" id="backgroundColor" value="@(Model.Survey.BackgroundColor ?? "#F3E5F5")">
+                </div>
+            </div>
+        </div>
+
+        <!-- Overlay для закрытия панели -->
+        <div id="theme-panel-overlay" class="theme-panel-overlay" onclick="toggleThemePanel()"></div>
+
     </form>
 
     @section Scripts {
@@ -392,8 +752,23 @@
                 document.querySelectorAll('.tab-link').forEach(el => el.classList.remove('active'));
 
                 // Активируем нужную вкладку
-                document.getElementById('tab-' + tabName).style.display = (tabName === 'questions' ? 'flex' : 'block');
+                const tabContent = document.getElementById('tab-' + tabName);
+                if (tabContent) {
+                    tabContent.style.display = (tabName === 'questions' ? 'flex' : 'block');
+                }
                 event.target.classList.add('active');
+            }
+
+            // Экспорт ответов
+            function exportResponses() {
+                const surveyId = document.body.getAttribute('data-survey-id');
+                if (!surveyId) {
+                    alert('Ошибка: не найден ID опроса');
+                    return;
+                }
+                
+                // Открываем страницу экспорта в новом окне
+                window.open(`/Survey/Export/${surveyId}`, '_blank');
             }
 
             // Переключение режима теста
@@ -418,6 +793,287 @@
                 } else {
                     content.style.display = 'none';
                     header.classList.remove('active');
+                }
+            }
+
+            // ====================================
+            // СИСТЕМА UNDO/REDO
+            // ====================================
+            let actionHistory = [];
+            let currentHistoryIndex = -1;
+            const MAX_HISTORY_SIZE = 50;
+
+            // Сохранение состояния в историю
+            function saveState() {
+                // Удаляем все состояния после текущего индекса (если делаем новое действие после undo)
+                if (currentHistoryIndex < actionHistory.length - 1) {
+                    actionHistory = actionHistory.slice(0, currentHistoryIndex + 1);
+                }
+
+                // Сохраняем текущее состояние DOM
+                const questionsContainer = document.getElementById('questions-container');
+                if (!questionsContainer) return;
+                
+                const state = {
+                    html: questionsContainer.innerHTML,
+                    timestamp: Date.now()
+                };
+
+                actionHistory.push(state);
+                currentHistoryIndex = actionHistory.length - 1;
+
+                // Ограничиваем размер истории
+                if (actionHistory.length > MAX_HISTORY_SIZE) {
+                    actionHistory.shift();
+                    currentHistoryIndex--;
+                }
+
+                updateUndoRedoButtons();
+            }
+
+            // Делаем функцию глобально доступной для constructor.js
+            window.saveState = saveState;
+
+            // Отмена действия
+            function undoAction() {
+                if (currentHistoryIndex > 0) {
+                    currentHistoryIndex--;
+                    restoreState();
+                }
+            }
+
+            // Повтор действия
+            function redoAction() {
+                if (currentHistoryIndex < actionHistory.length - 1) {
+                    currentHistoryIndex++;
+                    restoreState();
+                }
+            }
+
+            // Восстановление состояния
+            function restoreState() {
+                if (actionHistory[currentHistoryIndex]) {
+                    window.isRestoringState = true; // Флаг для предотвращения сохранения при восстановлении
+                    const questionsContainer = document.getElementById('questions-container');
+                    questionsContainer.innerHTML = actionHistory[currentHistoryIndex].html;
+                    
+                    // Переинициализируем обработчики событий
+                    if (typeof setupBlockActivation === 'function') {
+                        setupBlockActivation();
+                    }
+                    updateUndoRedoButtons();
+                    
+                    setTimeout(() => {
+                        window.isRestoringState = false;
+                    }, 100);
+                }
+            }
+
+            // Обновление состояния кнопок undo/redo
+            function updateUndoRedoButtons() {
+                const undoBtn = document.getElementById('undo-btn');
+                const redoBtn = document.getElementById('redo-btn');
+                
+                undoBtn.disabled = currentHistoryIndex <= 0;
+                redoBtn.disabled = currentHistoryIndex >= actionHistory.length - 1;
+            }
+
+            // Инициализация истории при загрузке страницы
+            document.addEventListener('DOMContentLoaded', function() {
+                // Сохраняем начальное состояние
+                setTimeout(() => {
+                    saveState();
+                }, 500);
+
+                // Отслеживаем изменения в вопросах для автоматического сохранения в историю
+                const questionsContainer = document.getElementById('questions-container');
+                if (questionsContainer) {
+                    // Используем MutationObserver для отслеживания изменений DOM
+                    const observer = new MutationObserver(function(mutations) {
+                        // Игнорируем изменения, вызванные самим undo/redo
+                        if (!window.isRestoringState) {
+                            // Дебаунс для избежания слишком частых сохранений
+                            clearTimeout(window.saveStateTimeout);
+                            window.saveStateTimeout = setTimeout(() => {
+                                saveState();
+                            }, 500);
+                        }
+                    });
+
+                    observer.observe(questionsContainer, {
+                        childList: true,
+                        subtree: true,
+                        attributes: true,
+                        attributeFilter: ['value', 'checked', 'selected']
+                    });
+                }
+
+                // Отслеживаем изменения в полях ввода
+                document.addEventListener('input', function(e) {
+                    if (e.target.closest('#questions-container') && !window.isRestoringState) {
+                        clearTimeout(window.saveStateTimeout);
+                        window.saveStateTimeout = setTimeout(() => {
+                            saveState();
+                        }, 1000);
+                    }
+                });
+            });
+
+            // Обработка горячих клавиш
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+                    e.preventDefault();
+                    undoAction();
+                } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+                    e.preventDefault();
+                    redoAction();
+                }
+            });
+
+            // ====================================
+            // ПРЕДПРОСМОТР ФОРМЫ
+            // ====================================
+            function openPreview() {
+                const surveyId = document.body.getAttribute('data-survey-id');
+                if (!surveyId) {
+                    alert('Ошибка: не найден ID опроса');
+                    return;
+                }
+                
+                // Открываем предпросмотр в новом окне
+                const previewUrl = `/Survey/Preview/${surveyId}`;
+                window.open(previewUrl, '_blank', 'width=1200,height=800');
+            }
+
+            // Переключение панели темы
+            function toggleThemePanel() {
+                const panel = document.getElementById('theme-panel');
+                const overlay = document.getElementById('theme-panel-overlay');
+                
+                if (panel.classList.contains('active')) {
+                    panel.classList.remove('active');
+                    overlay.style.display = 'none';
+                } else {
+                    panel.classList.add('active');
+                    overlay.style.display = 'block';
+                }
+            }
+
+            // Выбор цвета темы
+            function selectThemeColor(color) {
+                document.getElementById('themeColor').value = color;
+                document.querySelectorAll('.theme-color-item').forEach(item => {
+                    item.classList.remove('selected');
+                    item.innerHTML = '';
+                });
+                
+                const selectedItem = document.querySelector(`.theme-color-item[data-color="${color}"]`);
+                if (selectedItem) {
+                    selectedItem.classList.add('selected');
+                    selectedItem.innerHTML = '<i class="fas fa-check"></i>';
+                }
+                
+                updateThemePreview();
+            }
+
+            // Выбор цвета фона
+            function selectBackgroundColor(color) {
+                document.getElementById('backgroundColor').value = color;
+                document.querySelectorAll('.theme-background-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                const selectedItem = document.querySelector(`.theme-background-item[data-color="${color}"]`);
+                if (selectedItem) {
+                    selectedItem.classList.add('active');
+                }
+                
+                updateThemePreview();
+            }
+
+            // Обновление превью темы
+            function updateThemePreview() {
+                const themeColor = document.getElementById('themeColor').value;
+                const backgroundColor = document.getElementById('backgroundColor').value;
+                
+                // Применяем цвета к элементам формы
+                document.documentElement.style.setProperty('--theme-color', themeColor);
+                document.documentElement.style.setProperty('--theme-bg', backgroundColor);
+                
+                // Обновляем шрифты
+                const headerFont = document.getElementById('headerFontFamily').value;
+                const headerSize = document.getElementById('headerFontSize').value;
+                const questionFont = document.getElementById('questionFontFamily').value;
+                const questionSize = document.getElementById('questionFontSize').value;
+                const textFont = document.getElementById('textFontFamily').value;
+                const textSize = document.getElementById('textFontSize').value;
+                
+                // Применяем к превью (можно расширить для реального превью)
+                const titleInput = document.getElementById('survey-title-input');
+                if (titleInput) {
+                    titleInput.style.fontFamily = headerFont;
+                    titleInput.style.fontSize = headerSize + 'px';
+                }
+            }
+
+            // Загрузка изображения заголовка
+            function handleHeaderImageUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                if (!file.type.startsWith('image/')) {
+                    alert('Пожалуйста, выберите изображение');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('headerImagePreview');
+                    const pathInput = document.getElementById('headerImagePath');
+                    
+                    preview.innerHTML = `
+                        <img src="${e.target.result}" alt="Header">
+                        <button type="button" class="theme-image-remove" onclick="removeHeaderImage()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    preview.style.display = 'block';
+                    
+                    // Здесь можно добавить загрузку на сервер через AJAX
+                    // Пока сохраняем как base64 или временный путь
+                    pathInput.value = e.target.result; // Временное решение
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // Удаление изображения заголовка
+            function removeHeaderImage() {
+                const preview = document.getElementById('headerImagePreview');
+                const pathInput = document.getElementById('headerImagePath');
+                const fileInput = document.getElementById('headerImageInput');
+                
+                preview.style.display = 'none';
+                preview.innerHTML = '';
+                pathInput.value = '';
+                if (fileInput) fileInput.value = '';
+            }
+
+            // Открытие цветового пикера (заглушка)
+            function openColorPicker() {
+                const color = prompt('Введите цвет в формате HEX (например, #FF5733):', '#673AB7');
+                if (color && /^#[0-9A-F]{6}$/i.test(color)) {
+                    // Добавляем новый цвет в сетку
+                    const grid = document.querySelector('.theme-color-grid');
+                    const newColorItem = document.createElement('div');
+                    newColorItem.className = 'theme-color-item';
+                    newColorItem.setAttribute('data-color', color);
+                    newColorItem.style.backgroundColor = color;
+                    newColorItem.onclick = () => selectThemeColor(color);
+                    newColorItem.innerHTML = '';
+                    
+                    // Вставляем перед кнопкой добавления
+                    const addButton = document.querySelector('.theme-color-add');
+                    grid.insertBefore(newColorItem, addButton);
                 }
             }
 
@@ -612,6 +1268,17 @@
                 const showPoints = form.querySelector('input[name="Survey.ShowPoints"]')?.checked || false;
                 const defaultMaxPoints = parseInt(form.querySelector('#defaultMaxPoints')?.value || '0');
 
+                // Собираем настройки темы
+                const themeColor = form.querySelector('#themeColor')?.value || '#673AB7';
+                const backgroundColor = form.querySelector('#backgroundColor')?.value || '#F3E5F5';
+                const headerImagePath = form.querySelector('#headerImagePath')?.value || '';
+                const headerFontFamily = form.querySelector('#headerFontFamily')?.value || 'Courier New';
+                const headerFontSize = parseInt(form.querySelector('#headerFontSize')?.value || '24');
+                const questionFontFamily = form.querySelector('#questionFontFamily')?.value || 'Roboto';
+                const questionFontSize = parseInt(form.querySelector('#questionFontSize')?.value || '12');
+                const textFontFamily = form.querySelector('#textFontFamily')?.value || 'Roboto';
+                const textFontSize = parseInt(form.querySelector('#textFontSize')?.value || '11');
+
                 const data = {
                     Id: surveyId || null,
                     Title: form.querySelector('#survey-title-input')?.value || '',
@@ -625,6 +1292,15 @@
                     ShowCorrectAnswers: showCorrectAnswers,
                     ShowPoints: showPoints,
                     DefaultMaxPoints: defaultMaxPoints,
+                    ThemeColor: themeColor,
+                    BackgroundColor: backgroundColor,
+                    HeaderImagePath: headerImagePath,
+                    HeaderFontFamily: headerFontFamily,
+                    HeaderFontSize: headerFontSize,
+                    QuestionFontFamily: questionFontFamily,
+                    QuestionFontSize: questionFontSize,
+                    TextFontFamily: textFontFamily,
+                    TextFontSize: textFontSize,
                     Questions: []
                 };
                 

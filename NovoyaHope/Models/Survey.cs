@@ -30,6 +30,17 @@ namespace NovoyaHope.Models
         public bool ShowPoints { get; set; } = true;
         public int DefaultMaxPoints { get; set; } = 0;
 
+        // Настройки темы
+        public string? ThemeColor { get; set; } = "#673AB7"; // Фиолетовый по умолчанию
+        public string? BackgroundColor { get; set; } = "#F3E5F5"; // Светло-фиолетовый по умолчанию
+        public string? HeaderImagePath { get; set; }
+        public string? HeaderFontFamily { get; set; } = "Courier New";
+        public int? HeaderFontSize { get; set; } = 24;
+        public string? QuestionFontFamily { get; set; } = "Roboto";
+        public int? QuestionFontSize { get; set; } = 12;
+        public string? TextFontFamily { get; set; } = "Roboto";
+        public int? TextFontSize { get; set; } = 11;
+
         // Связь с создателем
         public required string CreatorId { get; set; }
         public ApplicationUser? Creator { get; set; }

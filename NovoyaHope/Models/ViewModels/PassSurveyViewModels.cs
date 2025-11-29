@@ -10,6 +10,17 @@ namespace NovoyaHope.Models.ViewModels
         public string Description { get; set; }
         public bool IsAnonymous { get; set; }
         public List<PassQuestionViewModel> Questions { get; set; }
+
+        // Настройки темы
+        public string? ThemeColor { get; set; }
+        public string? BackgroundColor { get; set; }
+        public string? HeaderImagePath { get; set; }
+        public string? HeaderFontFamily { get; set; }
+        public int? HeaderFontSize { get; set; }
+        public string? QuestionFontFamily { get; set; }
+        public int? QuestionFontSize { get; set; }
+        public string? TextFontFamily { get; set; }
+        public int? TextFontSize { get; set; }
     }
 
     public class PassQuestionViewModel

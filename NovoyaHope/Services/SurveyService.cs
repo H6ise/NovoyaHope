@@ -66,6 +66,17 @@ namespace NovoyaHope.Services
             survey.ShowPoints = model.ShowPoints;
             survey.DefaultMaxPoints = model.DefaultMaxPoints;
 
+            // 2.2. Обновление настроек темы
+            survey.ThemeColor = model.ThemeColor;
+            survey.BackgroundColor = model.BackgroundColor;
+            survey.HeaderImagePath = model.HeaderImagePath;
+            survey.HeaderFontFamily = model.HeaderFontFamily;
+            survey.HeaderFontSize = model.HeaderFontSize;
+            survey.QuestionFontFamily = model.QuestionFontFamily;
+            survey.QuestionFontSize = model.QuestionFontSize;
+            survey.TextFontFamily = model.TextFontFamily;
+            survey.TextFontSize = model.TextFontSize;
+
             // Если это новый опрос, сначала сохраняем его, чтобы получить Id
             if (survey.Id == 0)
             {

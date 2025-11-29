@@ -1,0 +1,334 @@
+@model NovoyaHope.Models.ViewModels.PassSurveyViewModel
+@using NovoyaHope.Models
+
+@{
+    ViewData["Title"] = "Предпросмотр: " + Model.Title;
+    Layout = null; // Без layout для чистого предпросмотра
+}
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: '@(Model.TextFontFamily ?? "Roboto")', sans-serif;
+            background: @(Model.BackgroundColor ?? "#F3E5F5");
+            min-height: 100vh;
+            padding-bottom: 50px;
+        }
+
+        .preview-header {
+            background: white;
+            padding: 16px 24px;
+            border-bottom: 1px solid #dadce0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .preview-header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .preview-back-btn {
+            background: none;
+            border: none;
+            color: #5f6368;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+        }
+
+        .preview-back-btn:hover {
+            background-color: #f1f3f4;
+        }
+
+        .preview-header-title {
+            font-size: 0.875rem;
+            color: #5f6368;
+            font-weight: 500;
+        }
+
+        .preview-header-right {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .preview-notice {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px 16px;
+            margin: 0 24px;
+            margin-top: 16px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .preview-notice i {
+            color: #ff9800;
+            font-size: 1.2rem;
+        }
+
+        .preview-notice-text {
+            color: #856404;
+            font-size: 0.875rem;
+        }
+
+        .preview-container {
+            max-width: 640px;
+            margin: 0 auto;
+            padding-top: 15px;
+        }
+
+        .preview-header-card, .preview-question-card {
+            background: white;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 12px;
+        }
+
+        .preview-header-card {
+            border-top: 10px solid @(Model.ThemeColor ?? "#673AB7");
+            @if (!string.IsNullOrEmpty(Model.HeaderImagePath))
+            {
+                <text>
+                background-image: url('@Model.HeaderImagePath');
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+                </text>
+            }
+        }
+
+        .preview-title {
+            font-size: @(Model.HeaderFontSize ?? 24)pt;
+            font-family: '@(Model.HeaderFontFamily ?? "Courier New")', monospace;
+            font-weight: 400;
+            margin-bottom: 10px;
+            color: #202124;
+        }
+
+        .preview-description {
+            font-size: @(Model.TextFontSize ?? 11)pt;
+            font-family: '@(Model.TextFontFamily ?? "Roboto")', sans-serif;
+            color: #202124;
+            margin-bottom: 10px;
+        }
+
+        .preview-divider {
+            margin: 15px 0;
+            border: 0;
+            border-top: 1px solid #dadce0;
+        }
+
+        .preview-question-text {
+            font-size: @(Model.QuestionFontSize ?? 12)px;
+            font-family: '@(Model.QuestionFontFamily ?? "Roboto")', sans-serif;
+            color: #202124;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .preview-option {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .preview-option input {
+            margin-right: 15px;
+            accent-color: @(Model.ThemeColor ?? "#673AB7");
+            width: 18px;
+            height: 18px;
+        }
+
+        .preview-option-text {
+            font-size: @(Model.TextFontSize ?? 11)px;
+            font-family: '@(Model.TextFontFamily ?? "Roboto")', sans-serif;
+            color: #202124;
+        }
+
+        .preview-input {
+            width: 100%;
+            border: none;
+            border-bottom: 1px solid #dadce0;
+            padding: 5px 0;
+            font-size: @(Model.TextFontSize ?? 11)px;
+            font-family: '@(Model.TextFontFamily ?? "Roboto")', sans-serif;
+            outline: none;
+            transition: border-bottom 0.3s;
+        }
+
+        .preview-input:focus {
+            border-bottom: 2px solid @(Model.ThemeColor ?? "#673AB7");
+        }
+
+        .preview-footer {
+            text-align: center;
+            font-size: 12px;
+            color: #5f6368;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-header">
+        <div class="preview-header-left">
+            <button type="button" class="preview-back-btn" onclick="window.close()" title="Закрыть предпросмотр">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <span class="preview-header-title">Режим предварительного просмотра</span>
+        </div>
+        <div class="preview-header-right">
+            <span style="color: #5f6368; font-size: 0.875rem;">Форма не опубликована</span>
+        </div>
+    </div>
+
+    <div class="preview-notice">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span class="preview-notice-text">В этой форме не принимаются ответы.</span>
+    </div>
+
+    <div class="preview-container">
+        <div class="preview-header-card">
+            <h1 class="preview-title">@Model.Title</h1>
+            @if (!string.IsNullOrWhiteSpace(Model.Description))
+            {
+                <p class="preview-description">@Model.Description</p>
+            }
+            <hr class="preview-divider" />
+            <div style="font-size: 0.9rem; color: #5f6368;">
+                <small>🔒 Предпросмотр формы</small>
+                <div style="margin-top: 8px; color: #d93025;">* Обязательный вопрос</div>
+            </div>
+        </div>
+
+        @foreach (var question in Model.Questions)
+        {
+            <div class="preview-question-card">
+                <div class="preview-question-text">
+                    @question.Text
+                    @if (question.IsRequired)
+                    {
+                        <span style="color: #d93025;">*</span>
+                    }
+                </div>
+
+                <div class="preview-answer-area">
+                    @switch (question.Type)
+                    {
+                        case QuestionType.ShortText:
+                            <input type="text" class="preview-input" placeholder="Краткий ответ" disabled>
+                            break;
+
+                        case QuestionType.ParagraphText:
+                            <textarea class="preview-input" placeholder="Развернутый ответ" rows="4" disabled></textarea>
+                            break;
+
+                        case QuestionType.SingleChoice:
+                            @foreach (var option in question.Options)
+                            {
+                                <label class="preview-option">
+                                    <input type="radio" disabled>
+                                    <span class="preview-option-text">@option.Text</span>
+                                </label>
+                            }
+                            break;
+
+                        case QuestionType.MultipleChoice:
+                            @foreach (var option in question.Options)
+                            {
+                                <label class="preview-option">
+                                    <input type="checkbox" disabled>
+                                    <span class="preview-option-text">@option.Text</span>
+                                </label>
+                            }
+                            break;
+
+                        case QuestionType.Dropdown:
+                            <select class="preview-input" style="max-width: 300px; padding: 10px 12px; border: 1px solid #dadce0; border-radius: 4px;" disabled>
+                                <option>Выберите вариант</option>
+                                @foreach (var option in question.Options)
+                                {
+                                    <option>@option.Text</option>
+                                }
+                            </select>
+                            break;
+
+                        case QuestionType.Scale:
+                            <div style="display: flex; justify-content: space-between; max-width: 300px; margin: 10px 0;">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    <label style="display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+                                        <span style="margin-bottom: 10px; font-size: 14px;">@i</span>
+                                        <input type="radio" disabled style="accent-color: @(Model.ThemeColor ?? "#673AB7");">
+                                    </label>
+                                }
+                            </div>
+                            break;
+
+                        case QuestionType.Rating:
+                            <div style="display: flex; gap: 8px; margin: 10px 0;">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    <span style="font-size: 2rem; opacity: 0.5;">⭐</span>
+                                }
+                            </div>
+                            break;
+
+                        case QuestionType.Date:
+                            <input type="date" class="preview-input" style="max-width: 250px; padding: 8px 12px; border: 1px solid #dadce0; border-radius: 4px;" disabled>
+                            break;
+
+                        case QuestionType.Time:
+                            <input type="time" class="preview-input" style="max-width: 250px; padding: 8px 12px; border: 1px solid #dadce0; border-radius: 4px;" disabled>
+                            break;
+
+                        case QuestionType.FileUpload:
+                            <div style="padding: 40px 20px; border: 2px dashed #dadce0; border-radius: 8px; text-align: center; background-color: #fafafa; color: #5f6368;">
+                                <i class="fas fa-cloud-upload-alt" style="font-size: 2.5rem; margin-bottom: 10px; display: block;"></i>
+                                <span>Нажмите для выбора файла</span>
+                            </div>
+                            break;
+                    }
+                </div>
+            </div>
+        }
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+            <button type="button" style="background-color: @(Model.ThemeColor ?? "#673AB7"); color: white; border: none; border-radius: 8px; padding: 12px 32px; font-size: 15px; font-weight: 600; cursor: not-allowed; opacity: 0.6;" disabled>
+                Отправить
+            </button>
+            <div style="color: @(Model.ThemeColor ?? "#673AB7"); font-size: 14px; cursor: pointer; font-weight: 500;">
+                Очистить форму
+            </div>
+        </div>
+    </div>
+
+    <div class="preview-footer">
+        Создано с помощью <b>NovoyaHope Forms</b>
+    </div>
+</body>
+</html>
+

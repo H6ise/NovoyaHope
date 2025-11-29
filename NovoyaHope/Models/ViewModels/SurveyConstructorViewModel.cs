@@ -15,6 +15,9 @@ namespace NovoyaHope.Models.ViewModels
         // или список, где каждое Question будет иметь свои Options.
         public List<Question> Questions { get; set; }
 
+        // Данные ответов для вкладки "Ответы"
+        public SurveyResultsViewModel? ResultsData { get; set; }
+
         // Дополнительные поля для обработки удалений на стороне клиента (опционально)
         // public string DeletedElements { get; set; }
     }

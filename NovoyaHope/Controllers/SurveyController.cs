@@ -68,6 +68,9 @@ namespace NovoyaHope.Controllers
             var survey = await _context.Surveys
                 .Include(s => s.Questions)
                     .ThenInclude(q => q.AnswerOptions)
+                .Include(s => s.Responses)
+                    .ThenInclude(r => r.UserAnswers)
+                        .ThenInclude(ua => ua.SelectedOption)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (survey == null || survey.CreatorId != _userManager.GetUserId(User))
@@ -75,14 +78,140 @@ namespace NovoyaHope.Controllers
                 return NotFound();
             }
 
+            // Подготовка данных ответов для вкладки "Ответы"
+            SurveyResultsViewModel? resultsData = null;
+            if (survey.Responses != null && survey.Responses.Any())
+            {
+                resultsData = new SurveyResultsViewModel
+                {
+                    SurveyId = survey.Id,
+                    SurveyTitle = survey.Title,
+                    TotalResponses = survey.Responses.Count,
+                    CreationDate = survey.CreatedDate,
+                    QuestionResults = new List<QuestionResultViewModel>()
+                };
+
+                // Обработка результатов по каждому вопросу
+                foreach (var question in (survey.Questions?.OrderBy(q => q.Order).ToList() ?? new List<Question>()))
+                {
+                    var questionResult = new QuestionResultViewModel
+                    {
+                        QuestionId = question.Id,
+                        Text = question.Text,
+                        Type = question.Type,
+                        OptionCounts = new Dictionary<int, int>(),
+                        OptionTexts = new Dictionary<int, string>(),
+                        TextAnswers = new List<string>(),
+                        AverageScore = 0
+                    };
+
+                    // Получаем все ответы на этот вопрос
+                    var answersForQuestion = survey.Responses
+                        .SelectMany(r => r.UserAnswers ?? new List<UserAnswer>())
+                        .Where(ua => ua.QuestionId == question.Id)
+                        .ToList();
+
+                    if (question.Type == QuestionType.ShortText || question.Type == QuestionType.ParagraphText)
+                    {
+                        questionResult.TextAnswers = answersForQuestion
+                            .Where(a => !string.IsNullOrWhiteSpace(a.TextAnswer))
+                            .Select(a => a.TextAnswer)
+                            .ToList();
+                    }
+                    else if (question.Type == QuestionType.SingleChoice || question.Type == QuestionType.MultipleChoice)
+                    {
+                        foreach (var option in question.AnswerOptions ?? new List<AnswerOption>())
+                        {
+                            questionResult.OptionTexts[option.Id] = option.Text;
+                            questionResult.OptionCounts[option.Id] = answersForQuestion
+                                .Count(a => a.SelectedOptionId == option.Id);
+                        }
+                    }
+                    else if (question.Type == QuestionType.Scale)
+                    {
+                        var scaleAnswers = answersForQuestion
+                            .Where(a => a.SelectedOptionId.HasValue)
+                            .Select(a => a.SelectedOption?.Order ?? 0)
+                            .Where(order => order > 0)
+                            .ToList();
+
+                        if (scaleAnswers.Any())
+                        {
+                            questionResult.AverageScore = scaleAnswers.Average();
+                        }
+
+                        foreach (var option in question.AnswerOptions ?? new List<AnswerOption>())
+                        {
+                            questionResult.OptionTexts[option.Id] = option.Text;
+                            questionResult.OptionCounts[option.Id] = answersForQuestion
+                                .Count(a => a.SelectedOptionId == option.Id);
+                        }
+                    }
+
+                    resultsData.QuestionResults.Add(questionResult);
+                }
+            }
+
             // Здесь необходим маппинг Survey -> ViewModel для конструктора
             var viewModel = new NovoyaHope.Models.ViewModels.SurveyConstructorViewModel
             {
                 Survey = survey,
-                Questions = survey.Questions?.OrderBy(q => q.Order).ToList() ?? new System.Collections.Generic.List<NovoyaHope.Models.Question>()
+                Questions = survey.Questions?.OrderBy(q => q.Order).ToList() ?? new System.Collections.Generic.List<NovoyaHope.Models.Question>(),
+                ResultsData = resultsData
             };
 
             return View("Constructor", viewModel);
+        }
+
+        // --- ПРЕДПРОСМОТР ---
+
+        // GET /survey/preview/1
+        public async Task<IActionResult> Preview(int id)
+        {
+            var userId = _userManager.GetUserId(User);
+            var survey = await _context.Surveys
+                .Include(s => s.Questions.OrderBy(q => q.Order))
+                    .ThenInclude(q => q.AnswerOptions.OrderBy(o => o.Order))
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (survey == null || survey.CreatorId != userId)
+            {
+                return NotFound();
+            }
+
+            // Создаем ViewModel для предпросмотра (похож на PassSurveyViewModel, но без возможности отправки)
+            var viewModel = new PassSurveyViewModel
+            {
+                Id = survey.Id,
+                Title = survey.Title,
+                Description = survey.Description,
+                IsAnonymous = survey.IsAnonymous,
+                Questions = survey.Questions?.OrderBy(q => q.Order).Select(q => new PassQuestionViewModel
+                {
+                    Id = q.Id,
+                    Text = q.Text,
+                    Type = q.Type,
+                    IsRequired = q.IsRequired,
+                    Options = q.AnswerOptions?.OrderBy(o => o.Order).Select(o => new PassAnswerOptionViewModel
+                    {
+                        Id = o.Id,
+                        Text = o.Text,
+                        Order = o.Order
+                    }).ToList() ?? new List<PassAnswerOptionViewModel>()
+                }).ToList() ?? new List<PassQuestionViewModel>(),
+                // Передаем настройки темы
+                ThemeColor = survey.ThemeColor,
+                BackgroundColor = survey.BackgroundColor,
+                HeaderImagePath = survey.HeaderImagePath,
+                HeaderFontFamily = survey.HeaderFontFamily,
+                HeaderFontSize = survey.HeaderFontSize,
+                QuestionFontFamily = survey.QuestionFontFamily,
+                QuestionFontSize = survey.QuestionFontSize,
+                TextFontFamily = survey.TextFontFamily,
+                TextFontSize = survey.TextFontSize
+            };
+
+            return View("Preview", viewModel);
         }
 
         // --- СОХРАНЕНИЕ / ОБНОВЛЕНИЕ ---

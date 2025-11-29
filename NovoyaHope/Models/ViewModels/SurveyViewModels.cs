@@ -28,6 +28,17 @@ namespace NovoyaHope.Models.ViewModels
         public bool ShowPoints { get; set; } = true;
         public int DefaultMaxPoints { get; set; } = 0;
 
+        // Настройки темы
+        public string? ThemeColor { get; set; } = "#673AB7";
+        public string? BackgroundColor { get; set; } = "#F3E5F5";
+        public string? HeaderImagePath { get; set; }
+        public string? HeaderFontFamily { get; set; } = "Courier New";
+        public int? HeaderFontSize { get; set; } = 24;
+        public string? QuestionFontFamily { get; set; } = "Roboto";
+        public int? QuestionFontSize { get; set; } = 12;
+        public string? TextFontFamily { get; set; } = "Roboto";
+        public int? TextFontSize { get; set; } = 11;
+
         // Список вопросов в текущем опросе
         public List<SaveQuestionViewModel> Questions { get; set; }
     }
