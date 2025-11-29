@@ -247,6 +247,15 @@ namespace NovoyaHope.Controllers
             return RedirectToAction(nameof(Profile));
         }
 
+        // --- Настройки ---
+
+        [Authorize]
+        [HttpGet]
+        public IActionResult Settings()
+        {
+            return View();
+        }
+
         // --- Вспомогательные методы ---
 
         private void AddErrors(IdentityResult result)

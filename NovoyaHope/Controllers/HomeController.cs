@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NovoyaHope.Models;
 using NovoyaHope.Data;
-using NovoyaHope.Models.ViewModels; // Предполагаем, что ErrorViewModel находится здесь
+using NovoyaHope.Models.ViewModels; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ ErrorViewModel пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,7 +20,7 @@ namespace NovoyaHope.Controllers
 
         public async Task<IActionResult> Index()
         {
-            // Получение последних 5 шаблонов для отображения на главной странице
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ 5 пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             var templates = await _context.SurveyTemplates
                                           .Take(5)
                                           .Select(t => new TemplateDisplayViewModel
@@ -43,8 +43,70 @@ namespace NovoyaHope.Controllers
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
-            // Предполагаем, что ErrorViewModel определена
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ ErrorViewModel пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+
+        // --- Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рµ СЃС‚СЂР°РЅРёС†С‹ РґР»СЏ РЅР°РІРёРіР°С†РёРё ---
+
+        public IActionResult About()
+        {
+            ViewData["Title"] = "Рћ РЅР°СЃ";
+            return View();
+        }
+
+        public IActionResult Features()
+        {
+            ViewData["Title"] = "Р’РѕР·РјРѕР¶РЅРѕСЃС‚Рё";
+            return View();
+        }
+
+        public IActionResult Pricing()
+        {
+            ViewData["Title"] = "РўР°СЂРёС„С‹";
+            return View();
+        }
+
+        public IActionResult Help()
+        {
+            ViewData["Title"] = "РџРѕРјРѕС‰СЊ";
+            return View();
+        }
+
+        public IActionResult Documentation()
+        {
+            ViewData["Title"] = "Р”РѕРєСѓРјРµРЅС‚Р°С†РёСЏ";
+            return View();
+        }
+
+        public IActionResult Blog()
+        {
+            ViewData["Title"] = "Р‘Р»РѕРі";
+            return View();
+        }
+
+        public IActionResult Contact()
+        {
+            ViewData["Title"] = "РљРѕРЅС‚Р°РєС‚С‹";
+            return View();
+        }
+
+        public IActionResult Privacy()
+        {
+            ViewData["Title"] = "РџРѕР»РёС‚РёРєР° РєРѕРЅС„РёРґРµРЅС†РёР°Р»СЊРЅРѕСЃС‚Рё";
+            return View();
+        }
+
+        public IActionResult Terms()
+        {
+            ViewData["Title"] = "РЈСЃР»РѕРІРёСЏ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ";
+            return View();
+        }
+
+        public IActionResult Cookies()
+        {
+            ViewData["Title"] = "Cookie";
+            return View();
         }
     }
 }

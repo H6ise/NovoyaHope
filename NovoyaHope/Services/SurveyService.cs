@@ -58,6 +58,14 @@ namespace NovoyaHope.Services
             survey.EndDate = model.EndDate;
             survey.IsPublished = model.IsPublished;
 
+            // 2.1. Обновление настроек теста
+            survey.IsTestMode = model.IsTestMode;
+            survey.GradePublication = model.GradePublication;
+            survey.ShowIncorrectAnswers = model.ShowIncorrectAnswers;
+            survey.ShowCorrectAnswers = model.ShowCorrectAnswers;
+            survey.ShowPoints = model.ShowPoints;
+            survey.DefaultMaxPoints = model.DefaultMaxPoints;
+
             // Если это новый опрос, сначала сохраняем его, чтобы получить Id
             if (survey.Id == 0)
             {

@@ -20,6 +20,14 @@ namespace NovoyaHope.Models.ViewModels
         public DateTime? EndDate { get; set; }
         public bool IsAnonymous { get; set; }
 
+        // Настройки теста
+        public bool IsTestMode { get; set; } = false;
+        public GradePublicationType GradePublication { get; set; } = GradePublicationType.AfterManualReview;
+        public bool ShowIncorrectAnswers { get; set; } = true;
+        public bool ShowCorrectAnswers { get; set; } = true;
+        public bool ShowPoints { get; set; } = true;
+        public int DefaultMaxPoints { get; set; } = 0;
+
         // Список вопросов в текущем опросе
         public List<SaveQuestionViewModel> Questions { get; set; }
     }

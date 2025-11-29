@@ -22,6 +22,14 @@ namespace NovoyaHope.Models
         public DateTime CreatedDate { get; set; }
         public DateTime? EndDate { get; set; } // Опциональная дата окончания
 
+        // Настройки теста
+        public bool IsTestMode { get; set; } = false;
+        public GradePublicationType GradePublication { get; set; } = GradePublicationType.AfterManualReview;
+        public bool ShowIncorrectAnswers { get; set; } = true;
+        public bool ShowCorrectAnswers { get; set; } = true;
+        public bool ShowPoints { get; set; } = true;
+        public int DefaultMaxPoints { get; set; } = 0;
+
         // Связь с создателем
         public required string CreatorId { get; set; }
         public ApplicationUser? Creator { get; set; }
@@ -29,5 +37,11 @@ namespace NovoyaHope.Models
         // Навигационные свойства
         public ICollection<Question>? Questions { get; set; }
         public ICollection<SurveyResponse>? Responses { get; set; }
+    }
+
+    public enum GradePublicationType
+    {
+        Immediately = 1,      // Сразу после отправки формы
+        AfterManualReview = 2 // После ручной проверки
     }
 }

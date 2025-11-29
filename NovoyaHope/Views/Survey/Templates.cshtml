@@ -1,0 +1,211 @@
+@model IEnumerable<NovoyaHope.Models.SurveyTemplate>
+
+@{
+    ViewData["Title"] = "Шаблоны Опросов";
+    Layout = "_Layout";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/templates.css" asp-append-version="true" />
+}
+
+<div class="templates-page">
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="header-content">
+                <h1 class="page-title">
+                    <i class="fas fa-layer-group"></i>
+                    Шаблоны опросов
+                </h1>
+                <p class="page-subtitle">Выберите готовый шаблон для быстрого создания опроса</p>
+            </div>
+            <div class="header-actions">
+                <a asp-action="Index" class="btn-secondary-action">
+                    <i class="fas fa-arrow-left"></i>
+                    Назад к опросам
+                </a>
+                <a asp-action="Edit" class="btn-primary-action">
+                    <i class="fas fa-plus"></i>
+                    Создать с нуля
+                </a>
+            </div>
+        </div>
+
+        <!-- Filters & Search -->
+        <div class="toolbar">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="searchInput" class="search-input" placeholder="Поиск шаблонов...">
+            </div>
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">
+                    <i class="fas fa-th"></i> Все
+                </button>
+                <button class="filter-btn" data-filter="poll">
+                    <i class="fas fa-poll"></i> Голосования
+                </button>
+                <button class="filter-btn" data-filter="questionnaire">
+                    <i class="fas fa-clipboard-list"></i> Анкеты
+                </button>
+            </div>
+        </div>
+
+        <!-- Templates Grid -->
+        <div class="templates-grid">
+            @foreach (var template in Model)
+            {
+                var templateType = template.Type == NovoyaHope.Models.SurveyType.Poll ? "poll" : "questionnaire";
+                var questionsCount = template.Questions?.Count ?? 0;
+                
+                <div class="template-card" data-type="@templateType" data-title="@template.Title">
+                    <div class="template-header">
+                        <div class="template-type-badge @templateType">
+                            @if (template.Type == NovoyaHope.Models.SurveyType.Poll)
+                            {
+                                <i class="fas fa-poll"></i>
+                                <span>Голосование</span>
+                            }
+                            else
+                            {
+                                <i class="fas fa-clipboard-list"></i>
+                                <span>Анкета</span>
+                            }
+                        </div>
+                    </div>
+                    
+                    <div class="template-content">
+                        <div class="template-icon">
+                            @if (template.Type == NovoyaHope.Models.SurveyType.Poll)
+                            {
+                                <i class="fas fa-poll-h"></i>
+                            }
+                            else
+                            {
+                                <i class="fas fa-clipboard-check"></i>
+                            }
+                        </div>
+                        <h3 class="template-title">@template.Title</h3>
+                        <p class="template-description">@template.Description</p>
+                        
+                        <div class="template-stats">
+                            <div class="stat-item">
+                                <i class="fas fa-question-circle"></i>
+                                <span>@questionsCount вопросов</span>
+                            </div>
+                            @if (template.Questions != null && template.Questions.Any())
+                            {
+                                var questionTypes = template.Questions.Select(q => q.Type).Distinct().Count();
+                                <div class="stat-item">
+                                    <i class="fas fa-tags"></i>
+                                    <span>@questionTypes типов</span>
+                                </div>
+                            }
+                        </div>
+
+                        @if (template.Questions != null && template.Questions.Any())
+                        {
+                            <div class="template-preview">
+                                <div class="preview-title">Предпросмотр вопросов:</div>
+                                <ul class="preview-list">
+                                    @foreach (var question in template.Questions.Take(3))
+                                    {
+                                        <li>
+                                            <i class="fas fa-@(GetQuestionIcon(question.Type))"></i>
+                                            <span>@question.Text</span>
+                                        </li>
+                                    }
+                                    @if (template.Questions.Count > 3)
+                                    {
+                                        <li class="preview-more">
+                                            <i class="fas fa-ellipsis-h"></i>
+                                            <span>и еще @(template.Questions.Count - 3) вопросов...</span>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+                    </div>
+                    
+                    <div class="template-footer">
+                        <form asp-action="UseTemplate" asp-route-id="@template.Id" method="post" class="use-template-form">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-use-template">
+                                <i class="fas fa-magic"></i>
+                                Использовать шаблон
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Empty State -->
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <i class="fas fa-layer-group"></i>
+                <h3>Шаблоны пока не созданы</h3>
+                <p>Создайте свой первый шаблон или начните с пустого опроса</p>
+                <div class="empty-actions">
+                    <a asp-action="Edit" class="btn-primary-action">
+                        <i class="fas fa-plus"></i>
+                        Создать опрос
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@functions {
+    string GetQuestionIcon(NovoyaHope.Models.QuestionType type)
+    {
+        return type switch
+        {
+            NovoyaHope.Models.QuestionType.ShortText => "font",
+            NovoyaHope.Models.QuestionType.ParagraphText => "align-left",
+            NovoyaHope.Models.QuestionType.SingleChoice => "dot-circle",
+            NovoyaHope.Models.QuestionType.MultipleChoice => "check-square",
+            NovoyaHope.Models.QuestionType.Dropdown => "chevron-down",
+            NovoyaHope.Models.QuestionType.FileUpload => "upload",
+            NovoyaHope.Models.QuestionType.Scale => "sliders-h",
+            NovoyaHope.Models.QuestionType.Rating => "star",
+            NovoyaHope.Models.QuestionType.CheckboxGrid => "th",
+            NovoyaHope.Models.QuestionType.RadioGrid => "th-list",
+            NovoyaHope.Models.QuestionType.Date => "calendar",
+            NovoyaHope.Models.QuestionType.Time => "clock",
+            _ => "question-circle"
+        };
+    }
+}
+
+@section Scripts {
+    <script>
+        // Search functionality
+        document.getElementById('searchInput')?.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll('.template-card[data-title]').forEach(card => {
+                const title = card.getAttribute('data-title').toLowerCase();
+                const description = card.querySelector('.template-description')?.textContent.toLowerCase() || '';
+                const matches = title.includes(searchTerm) || description.includes(searchTerm);
+                card.style.display = matches ? '' : 'none';
+            });
+        });
+
+        // Filter functionality
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                const filter = this.getAttribute('data-filter');
+                document.querySelectorAll('.template-card[data-type]').forEach(card => {
+                    const type = card.getAttribute('data-type');
+                    card.style.display = (filter === 'all' || filter === type) ? '' : 'none';
+                });
+            });
+        });
+    </script>
+}
+

@@ -777,3 +777,327 @@ textarea.input-line {
         padding: 6px 10px;
     }
 }
+
+/* ====================================
+   СТИЛИ ДЛЯ ВКЛАДКИ НАСТРОЕК
+   ==================================== */
+
+.settings-container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.settings-section {
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.settings-section-header {
+    padding: 24px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.settings-section-header.collapsible-header {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.settings-section-header.collapsible-header:hover {
+    background-color: var(--bg-light);
+}
+
+.settings-section-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.settings-section-title {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-dark);
+    margin: 0;
+}
+
+.settings-section-description {
+    font-size: 0.875rem;
+    color: var(--text-gray);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.settings-section-content {
+    padding: 24px;
+}
+
+.settings-subsection {
+    margin-bottom: 32px;
+}
+
+.settings-subsection:last-child {
+    margin-bottom: 0;
+}
+
+.settings-subsection-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 16px 0;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 28px;
+}
+
+.toggle-switch.small {
+    width: 40px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s;
+    border-radius: 28px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+.toggle-switch.small .toggle-slider:before {
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background-color: var(--primary-green);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+}
+
+.toggle-switch.small input:checked + .toggle-slider:before {
+    transform: translateX(16px);
+}
+
+/* Radio Options */
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.radio-option:hover {
+    background-color: var(--bg-light);
+}
+
+.radio-option input[type="radio"] {
+    margin-right: 12px;
+    accent-color: var(--primary-green);
+    cursor: pointer;
+}
+
+.radio-label {
+    font-size: 0.9375rem;
+    color: var(--text-dark);
+    cursor: pointer;
+}
+
+.settings-note {
+    font-size: 0.8125rem;
+    color: var(--text-gray);
+    margin: 12px 0 0 0;
+    padding-left: 32px;
+}
+
+/* Toggle Options */
+.toggle-option {
+    margin-bottom: 16px;
+}
+
+.toggle-option:last-child {
+    margin-bottom: 0;
+}
+
+.toggle-option-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.toggle-option-text {
+    flex: 1;
+}
+
+.toggle-option-text strong {
+    display: block;
+    font-size: 0.9375rem;
+    color: var(--text-dark);
+    margin-bottom: 4px;
+}
+
+.toggle-option-description {
+    font-size: 0.8125rem;
+    color: var(--text-gray);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Input Options */
+.input-option {
+    margin-bottom: 16px;
+}
+
+.input-label {
+    display: block;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--text-dark);
+    margin-bottom: 4px;
+}
+
+.input-description {
+    font-size: 0.8125rem;
+    color: var(--text-gray);
+    margin: 0 0 8px 0;
+}
+
+.input-with-suffix {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.settings-input {
+    width: 120px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.9375rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.settings-input:focus {
+    border-color: var(--primary-green);
+    box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.1);
+}
+
+.input-suffix {
+    font-size: 0.875rem;
+    color: var(--text-gray);
+}
+
+/* Collapsible Sections */
+.collapsible-icon {
+    transition: transform 0.3s;
+    color: var(--text-gray);
+    font-size: 0.875rem;
+}
+
+.collapsible-header.active .collapsible-icon {
+    transform: rotate(180deg);
+}
+
+.collapsible-content {
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.collapsible-subsection {
+    margin-bottom: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.collapsible-subsection:last-child {
+    margin-bottom: 0;
+}
+
+.settings-placeholder {
+    font-size: 0.875rem;
+    color: var(--text-gray);
+    font-style: italic;
+    margin: 0;
+    padding: 16px;
+    text-align: center;
+}
+
+/* Tabs Navigation */
+.tabs-nav {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid transparent;
+}
+
+.tab-link {
+    padding: 12px 24px;
+    text-decoration: none;
+    color: var(--text-gray);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    position: relative;
+    top: 2px;
+}
+
+.tab-link:hover {
+    color: var(--primary-green);
+    background-color: var(--bg-light);
+}
+
+.tab-link.active {
+    color: var(--primary-green);
+    border-bottom-color: var(--primary-green);
+}
+
+.tab-content {
+    min-height: 400px;
+}

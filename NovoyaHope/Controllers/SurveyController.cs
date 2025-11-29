@@ -5,6 +5,7 @@ using NovoyaHope.Data;
 using NovoyaHope.Models;
 using NovoyaHope.Models.ViewModels;
 using NovoyaHope.Services;
+using System;
 using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
@@ -344,6 +345,91 @@ namespace NovoyaHope.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { success = true, message = "Опросник снят с публикации." });
+        }
+
+        // --- ШАБЛОНЫ ---
+
+        // GET /survey/templates
+        public async Task<IActionResult> Templates()
+        {
+            var templates = await _context.SurveyTemplates
+                .Include(t => t.Questions.OrderBy(q => q.Order))
+                    .ThenInclude(q => q.AnswerOptions.OrderBy(o => o.Order))
+                .OrderByDescending(t => t.Id)
+                .ToListAsync();
+
+            return View(templates);
+        }
+
+        // POST /survey/use-template/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UseTemplate(int id)
+        {
+            var userId = _userManager.GetUserId(User);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var template = await _context.SurveyTemplates
+                .Include(t => t.Questions.OrderBy(q => q.Order))
+                    .ThenInclude(q => q.AnswerOptions.OrderBy(o => o.Order))
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (template == null)
+            {
+                return NotFound();
+            }
+
+            // Создаем новый опрос на основе шаблона
+            var newSurvey = new Survey
+            {
+                Title = template.Title,
+                Description = template.Description,
+                Type = template.Type,
+                CreatorId = userId,
+                CreatedDate = DateTime.UtcNow,
+                IsPublished = false,
+                IsAnonymous = true
+            };
+
+            _context.Surveys.Add(newSurvey);
+            await _context.SaveChangesAsync();
+
+            // Копируем вопросы из шаблона
+            foreach (var templateQuestion in template.Questions)
+            {
+                var question = new Question
+                {
+                    SurveyId = newSurvey.Id,
+                    Text = templateQuestion.Text,
+                    Type = templateQuestion.Type,
+                    IsRequired = true,
+                    Order = templateQuestion.Order
+                };
+
+                _context.Questions.Add(question);
+                await _context.SaveChangesAsync();
+
+                // Копируем варианты ответов
+                foreach (var templateOption in templateQuestion.AnswerOptions)
+                {
+                    var option = new AnswerOption
+                    {
+                        QuestionId = question.Id,
+                        Text = templateOption.Text,
+                        Order = templateOption.Order
+                    };
+
+                    _context.AnswerOptions.Add(option);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Опрос создан на основе шаблона!";
+            return RedirectToAction(nameof(Edit), new { id = newSurvey.Id });
         }
     }
 }

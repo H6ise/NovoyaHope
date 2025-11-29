@@ -97,7 +97,7 @@
                                 @if (survey.IsPublished)
                                 {
                                     <a asp-action="Results" asp-route-id="@survey.Id" class="dropdown-item">
-                                        <i class="fas fa-chart-bar"></i> Результаты
+                                        <i class="fas fa-chart-bar"></i> Ответы
                                     </a>
                                     <a asp-controller="Public" asp-action="ViewSurvey" asp-route-id="@survey.Id" target="_blank" class="dropdown-item">
                                         <i class="fas fa-external-link-alt"></i> Открыть
@@ -142,12 +142,6 @@
                             }
                         </div>
                         <div class="card-actions">
-                            @if (survey.IsPublished)
-                            {
-                                <a asp-action="Results" asp-route-id="@survey.Id" class="action-btn" title="Результаты">
-                                    <i class="fas fa-chart-line"></i>
-                                </a>
-                            }
                             <a asp-action="Edit" asp-route-id="@survey.Id" class="action-btn" title="Редактировать">
                                 <i class="fas fa-edit"></i>
                             </a>

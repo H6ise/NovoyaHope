@@ -28,7 +28,7 @@
 
                 <div class="tabs-nav">
                     <a href="#" class="tab-link active" onclick="switchTab(event, 'questions')">Вопросы</a>
-                    <a asp-controller="Response" asp-action="Index" asp-route-surveyId="@Model.Survey.Id" class="tab-link">Ответы</a>
+                    <a asp-controller="Survey" asp-action="Results" asp-route-surveyId="@Model.Survey.Id" class="tab-link">Ответы</a>
                     <a href="#" class="tab-link" onclick="switchTab(event, 'settings')">Настройки</a>
                 </div>
 
@@ -39,7 +39,7 @@
                         <a asp-controller="Public" asp-action="ViewSurvey" asp-route-id="@Model.Survey.Id" target="_blank" 
                            class="btn-secondary" style="margin-right: 10px; text-decoration: none; display: inline-block;">🔗 Открыть</a>
                         <a asp-action="Results" asp-route-id="@Model.Survey.Id" 
-                           class="btn-secondary" style="margin-right: 10px; text-decoration: none; display: inline-block;">📊 Результаты</a>
+                           class="btn-secondary" style="margin-right: 10px; text-decoration: none; display: inline-block;">📊 Ответы</a>
                         <button type="button" onclick="unpublishSurvey(@Model.Survey.Id)" class="btn-secondary" style="background-color: #f5faf5; color: #2e7d32;">
                             Снять с публикации
                         </button>
@@ -181,9 +181,188 @@
         </div>
 
             <div id="tab-settings" class="tab-content" style="display: none;">
-                <div style="max-width: 600px; margin: 40px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
-                    <h3>Настройки формы</h3>
-                    <p style="color: var(--gray-text);">Здесь будет интерфейс для управления общими настройками опроса: ограничение на один ответ, показ шкалы прогресса и т.д.</p>
+                <div class="settings-container">
+                    <!-- Раздел: Тест -->
+                    <div class="settings-section">
+                        <div class="settings-section-header">
+                            <div class="settings-section-title-row">
+                                <h3 class="settings-section-title">Тест</h3>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" name="Survey.IsTestMode" id="isTestMode" 
+                                           @(Model.Survey.IsTestMode ? "checked" : "") 
+                                           onchange="toggleTestMode()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <p class="settings-section-description">
+                                Настройка максимальных баллов, указание ответов и автоматическая отправка отзывов
+                            </p>
+                        </div>
+
+                        <div id="test-settings-content" class="settings-section-content" style="@(Model.Survey.IsTestMode ? "" : "display: none;")">
+                            <!-- ПУБЛИКАЦИЯ ОЦЕНОК -->
+                            <div class="settings-subsection">
+                                <h4 class="settings-subsection-title">ПУБЛИКАЦИЯ ОЦЕНОК</h4>
+                                <div class="radio-group">
+                                    <label class="radio-option">
+                                        <input type="radio" name="Survey.GradePublication" value="1" 
+                                               @(Model.Survey.GradePublication == GradePublicationType.Immediately ? "checked" : "")
+                                               id="gradeImmediately">
+                                        <span class="radio-label">Сразу после отправки формы</span>
+                                    </label>
+                                    <label class="radio-option">
+                                        <input type="radio" name="Survey.GradePublication" value="2" 
+                                               @(Model.Survey.GradePublication == GradePublicationType.AfterManualReview ? "checked" : "")
+                                               id="gradeAfterReview">
+                                        <span class="radio-label">После ручной проверки</span>
+                                    </label>
+                                </div>
+                                <p class="settings-note">
+                                    Будет включен параметр "Ответы → Собирать адреса электронной почты"
+                                </p>
+                            </div>
+
+                            <!-- НАСТРОЙКИ РЕСПОНДЕНТОВ -->
+                            <div class="settings-subsection">
+                                <h4 class="settings-subsection-title">НАСТРОЙКИ РЕСПОНДЕНТОВ</h4>
+                                
+                                <div class="toggle-option">
+                                    <div class="toggle-option-content">
+                                        <div class="toggle-option-text">
+                                            <strong>Незачтенные ответы</strong>
+                                            <p class="toggle-option-description">Респонденты могут видеть, на какие вопросы даны неверные ответы.</p>
+                                        </div>
+                                        <label class="toggle-switch small">
+                                            <input type="checkbox" name="Survey.ShowIncorrectAnswers" 
+                                                   @(Model.Survey.ShowIncorrectAnswers ? "checked" : "")>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="toggle-option">
+                                    <div class="toggle-option-content">
+                                        <div class="toggle-option-text">
+                                            <strong>Правильные ответы</strong>
+                                            <p class="toggle-option-description">Респондентам показываются правильные ответы после выставления оценок.</p>
+                                        </div>
+                                        <label class="toggle-switch small">
+                                            <input type="checkbox" name="Survey.ShowCorrectAnswers" 
+                                                   @(Model.Survey.ShowCorrectAnswers ? "checked" : "")>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="toggle-option">
+                                    <div class="toggle-option-content">
+                                        <div class="toggle-option-text">
+                                            <strong>Баллы за ответы</strong>
+                                            <p class="toggle-option-description">Респондентам показываются как баллы, полученные за каждый вопрос, так и общее количество баллов.</p>
+                                        </div>
+                                        <label class="toggle-switch small">
+                                            <input type="checkbox" name="Survey.ShowPoints" 
+                                                   @(Model.Survey.ShowPoints ? "checked" : "")>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ОБЩИЕ ПАРАМЕТРЫ ОПРОСА ПО УМОЛЧАНИЮ -->
+                            <div class="settings-subsection">
+                                <h4 class="settings-subsection-title">ОБЩИЕ ПАРАМЕТРЫ ОПРОСА ПО УМОЛЧАНИЮ</h4>
+                                <div class="input-option">
+                                    <label class="input-label">
+                                        Максимальный балл за вопрос по умолчанию
+                                    </label>
+                                    <p class="input-description">Максимальные баллы за каждый новый вопрос</p>
+                                    <div class="input-with-suffix">
+                                        <input type="number" name="Survey.DefaultMaxPoints" 
+                                               value="@Model.Survey.DefaultMaxPoints" 
+                                               min="0" class="settings-input" id="defaultMaxPoints">
+                                        <span class="input-suffix">балл.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Раздел: Ответы (сворачиваемый) -->
+                    <div class="settings-section collapsible">
+                        <div class="settings-section-header collapsible-header" onclick="toggleCollapsible(this)">
+                            <div class="settings-section-title-row">
+                                <h3 class="settings-section-title">Ответы</h3>
+                                <i class="fas fa-chevron-down collapsible-icon"></i>
+                            </div>
+                            <p class="settings-section-description">
+                                Управление сбором и защитой ответов.
+                            </p>
+                        </div>
+                        <div class="settings-section-content collapsible-content" style="display: none;">
+                            <p class="settings-placeholder">Настройки ответов будут здесь</p>
+                        </div>
+                    </div>
+
+                    <!-- Раздел: Презентация (сворачиваемый) -->
+                    <div class="settings-section collapsible">
+                        <div class="settings-section-header collapsible-header" onclick="toggleCollapsible(this)">
+                            <div class="settings-section-title-row">
+                                <h3 class="settings-section-title">Презентация</h3>
+                                <i class="fas fa-chevron-down collapsible-icon"></i>
+                            </div>
+                            <p class="settings-section-description">
+                                Управление представлением формы и ответов на ее вопросы.
+                            </p>
+                        </div>
+                        <div class="settings-section-content collapsible-content" style="display: none;">
+                            <p class="settings-placeholder">Настройки презентации будут здесь</p>
+                        </div>
+                    </div>
+
+                    <!-- Раздел: Значения по умолчанию (сворачиваемый) -->
+                    <div class="settings-section collapsible">
+                        <div class="settings-section-header collapsible-header" onclick="toggleCollapsible(this)">
+                            <div class="settings-section-title-row">
+                                <h3 class="settings-section-title">Значения по умолчанию</h3>
+                                <i class="fas fa-chevron-down collapsible-icon"></i>
+                            </div>
+                        </div>
+                        <div class="settings-section-content collapsible-content" style="display: none;">
+                            <div class="settings-subsection">
+                                <div class="collapsible-subsection">
+                                    <div class="settings-section-header collapsible-header" onclick="toggleCollapsible(this)">
+                                        <div class="settings-section-title-row">
+                                            <h4 class="settings-subsection-title">Настройки форм по умолчанию</h4>
+                                            <i class="fas fa-chevron-down collapsible-icon"></i>
+                                        </div>
+                                        <p class="settings-section-description">
+                                            Настройки, которые будут действовать для текущей и новых форм
+                                        </p>
+                                    </div>
+                                    <div class="settings-section-content collapsible-content" style="display: none;">
+                                        <p class="settings-placeholder">Настройки будут здесь</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="settings-subsection">
+                                <div class="collapsible-subsection">
+                                    <div class="settings-section-header collapsible-header" onclick="toggleCollapsible(this)">
+                                        <div class="settings-section-title-row">
+                                            <h4 class="settings-subsection-title">Настройки вопросов по умолчанию</h4>
+                                            <i class="fas fa-chevron-down collapsible-icon"></i>
+                                        </div>
+                                        <p class="settings-section-description">
+                                            Настройки, которые будут действовать для всех новых вопросов
+                                        </p>
+                                    </div>
+                                    <div class="settings-section-content collapsible-content" style="display: none;">
+                                        <p class="settings-placeholder">Настройки будут здесь</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -215,6 +394,31 @@
                 // Активируем нужную вкладку
                 document.getElementById('tab-' + tabName).style.display = (tabName === 'questions' ? 'flex' : 'block');
                 event.target.classList.add('active');
+            }
+
+            // Переключение режима теста
+            function toggleTestMode() {
+                const isTestMode = document.getElementById('isTestMode').checked;
+                const testSettingsContent = document.getElementById('test-settings-content');
+                if (isTestMode) {
+                    testSettingsContent.style.display = 'block';
+                } else {
+                    testSettingsContent.style.display = 'none';
+                }
+            }
+
+            // Переключение сворачиваемых секций
+            function toggleCollapsible(header) {
+                const content = header.nextElementSibling;
+                const icon = header.querySelector('.collapsible-icon');
+                
+                if (content.style.display === 'none') {
+                    content.style.display = 'block';
+                    header.classList.add('active');
+                } else {
+                    content.style.display = 'none';
+                    header.classList.remove('active');
+                }
             }
 
             // JS-функция для сохранения опросника
@@ -400,6 +604,14 @@
                 const formData = new FormData(form);
                 const surveyId = parseInt(form.querySelector('input[name="Survey.Id"]')?.value || '0');
                 
+                // Собираем настройки теста
+                const isTestMode = form.querySelector('#isTestMode')?.checked || false;
+                const gradePublication = form.querySelector('input[name="Survey.GradePublication"]:checked')?.value || '2';
+                const showIncorrectAnswers = form.querySelector('input[name="Survey.ShowIncorrectAnswers"]')?.checked || false;
+                const showCorrectAnswers = form.querySelector('input[name="Survey.ShowCorrectAnswers"]')?.checked || false;
+                const showPoints = form.querySelector('input[name="Survey.ShowPoints"]')?.checked || false;
+                const defaultMaxPoints = parseInt(form.querySelector('#defaultMaxPoints')?.value || '0');
+
                 const data = {
                     Id: surveyId || null,
                     Title: form.querySelector('#survey-title-input')?.value || '',
@@ -407,6 +619,12 @@
                     Type: 'Questionnaire', // Используем строковое значение enum
                     IsPublished: false,
                     IsAnonymous: true,
+                    IsTestMode: isTestMode,
+                    GradePublication: parseInt(gradePublication),
+                    ShowIncorrectAnswers: showIncorrectAnswers,
+                    ShowCorrectAnswers: showCorrectAnswers,
+                    ShowPoints: showPoints,
+                    DefaultMaxPoints: defaultMaxPoints,
                     Questions: []
                 };
                 
