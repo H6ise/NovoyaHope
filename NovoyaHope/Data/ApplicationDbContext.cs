@@ -80,14 +80,14 @@ namespace NovoyaHope.Data
             // --- Настройка для Разделов ---
             builder.Entity<Section>()
                 .HasOne(s => s.Survey)
-                .WithMany()
+                .WithMany(s => s.Sections)
                 .HasForeignKey(s => s.SurveyId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // --- Настройка для Медиа ---
             builder.Entity<Media>()
                 .HasOne(m => m.Survey)
-                .WithMany()
+                .WithMany(s => s.Media)
                 .HasForeignKey(m => m.SurveyId)
                 .OnDelete(DeleteBehavior.Cascade);
 

@@ -46,24 +46,30 @@
 .btn-secondary-action {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     padding: 12px 24px;
     border-radius: 8px;
     font-weight: 600;
     text-decoration: none;
     transition: all var(--transition-base);
+    border: none;
+    cursor: pointer;
 }
 
 .btn-primary-action {
-    background-color: var(--primary-color);
+    background-color: #2e7d32;
     color: white;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 2px 8px rgba(46, 125, 50, 0.2);
 }
 
 .btn-primary-action:hover {
-    background-color: var(--primary-dark);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+    background-color: #1b5e20;
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+.btn-primary-action i {
+    display: none; /* Скрываем иконки для чистого дизайна */
 }
 
 .btn-secondary-action {
@@ -454,13 +460,66 @@
 .empty-state p {
     font-size: 1.1rem;
     color: var(--text-secondary);
-    margin-bottom: 32px;
+    margin-bottom: 48px;
 }
 
 .empty-actions {
     display: flex;
-    gap: 16px;
+    gap: 24px;
     justify-content: center;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.empty-actions .btn-primary-action,
+.empty-actions .btn-secondary-action {
+    flex: 1;
+    min-width: 200px;
+    padding: 16px 32px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all var(--transition-base);
+    border: none;
+    cursor: pointer;
+}
+
+.empty-actions .btn-primary-action {
+    background-color: #2e7d32;
+    color: white;
+    box-shadow: 0 2px 8px rgba(46, 125, 50, 0.2);
+}
+
+.empty-actions .btn-primary-action:hover {
+    background-color: #1b5e20;
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+    transform: translateY(-2px);
+}
+
+.empty-actions .btn-primary-action i {
+    display: none; /* Скрываем иконки для чистого дизайна */
+}
+
+.empty-actions .btn-secondary-action {
+    background: white;
+    color: #2e7d32;
+    border: 2px solid #e0e0e0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.empty-actions .btn-secondary-action:hover {
+    border-color: #2e7d32;
+    background: #f5faf5;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.empty-actions .btn-secondary-action i {
+    display: none; /* Скрываем иконки для чистого дизайна */
 }
 
 /* Responsive Design */

@@ -118,6 +118,7 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     opacity: 1;
+    position: relative;
 }
 
     /* Активное/редактируемое состояние */
@@ -130,6 +131,61 @@
 
     .question-block:hover {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    /* Drag-and-drop стили для вопросов */
+    .question-block.draggable-question {
+        cursor: move;
+    }
+
+    .question-block.dragging {
+        opacity: 0.5;
+        transform: scale(0.98);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .question-block.drag-over {
+        border-top: 3px solid var(--primary-green);
+        margin-top: 10px;
+        padding-top: 35px;
+    }
+
+    /* Предотвращаем визуальные эффекты на карточке вопроса при перетаскивании вариантов ответов */
+    .question-block:has(.option-item.dragging) {
+        opacity: 1 !important;
+        transform: none !important;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .question-block:has(.option-item.dragging) .option-item.dragging {
+        opacity: 0.5;
+        transform: scale(0.95);
+    }
+
+    .drag-handle {
+        cursor: grab;
+        color: var(--text-gray);
+        margin-right: 10px;
+        padding: 4px 8px;
+        display: inline-flex;
+        align-items: center;
+        opacity: 0.5;
+        transition: opacity 0.2s, color 0.2s;
+        user-select: none;
+    }
+
+    .drag-handle:hover {
+        opacity: 1;
+        color: var(--primary-green);
+    }
+
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+
+    .question-header {
+        display: flex;
+        align-items: center;
     }
 
 .question-input, .option-input {
@@ -156,12 +212,49 @@
     display: flex;
     align-items: center;
     margin-bottom: 10px;
+    position: relative;
+    transition: all 0.2s ease;
 }
 
     .option-item input[type="radio"],
     .option-item input[type="checkbox"] {
         margin-right: 15px;
         accent-color: var(--primary-green);
+    }
+
+    /* Drag-and-drop стили для вариантов ответов */
+    .option-item.draggable-option {
+        cursor: move;
+    }
+
+    .option-item.dragging {
+        opacity: 0.5;
+        transform: scale(0.95);
+    }
+
+    .option-item.drag-over {
+        border-top: 2px solid var(--primary-green);
+        margin-top: 5px;
+    }
+
+    .option-drag-handle {
+        cursor: grab;
+        color: var(--text-gray);
+        margin-right: 8px;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        opacity: 0.5;
+        transition: opacity 0.2s;
+    }
+
+    .option-drag-handle:hover {
+        opacity: 1;
+        color: var(--primary-green);
+    }
+
+    .option-drag-handle:active {
+        cursor: grabbing;
     }
 
 .remove-option-btn {

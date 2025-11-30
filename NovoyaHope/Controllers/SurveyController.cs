@@ -5,12 +5,14 @@ using NovoyaHope.Data;
 using NovoyaHope.Models;
 using NovoyaHope.Models.ViewModels;
 using NovoyaHope.Services;
+using NovoyaHope.Helpers;
 using System;
 using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using System.IO;
 
 namespace NovoyaHope.Controllers
 {
@@ -68,6 +70,8 @@ namespace NovoyaHope.Controllers
             var survey = await _context.Surveys
                 .Include(s => s.Questions)
                     .ThenInclude(q => q.AnswerOptions)
+                .Include(s => s.Sections)
+                .Include(s => s.Media)
                 .Include(s => s.Responses)
                     .ThenInclude(r => r.UserAnswers)
                         .ThenInclude(ua => ua.SelectedOption)
@@ -157,6 +161,8 @@ namespace NovoyaHope.Controllers
             {
                 Survey = survey,
                 Questions = survey.Questions?.OrderBy(q => q.Order).ToList() ?? new System.Collections.Generic.List<NovoyaHope.Models.Question>(),
+                Sections = survey.Sections?.OrderBy(s => s.Order).ToList() ?? new System.Collections.Generic.List<Section>(),
+                Media = survey.Media?.OrderBy(m => m.Order).ToList() ?? new System.Collections.Generic.List<Media>(),
                 ResultsData = resultsData
             };
 
@@ -225,6 +231,43 @@ namespace NovoyaHope.Controllers
             if (string.IsNullOrEmpty(userId))
             {
                 return Unauthorized();
+            }
+
+            // Обработка загруженных файлов для медиа-изображений
+            if (Request.Form.Files != null && Request.Form.Files.Count > 0)
+            {
+                var webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                var tempSurveyId = model.Id ?? 0;
+                
+                // Если это новый опрос, сначала сохраняем его, чтобы получить Id
+                if (tempSurveyId == 0)
+                {
+                    tempSurveyId = await _surveyService.SaveSurveyAsync(model, userId);
+                }
+
+                // Обрабатываем загруженные файлы для медиа
+                if (model.Media != null)
+                {
+                    for (int i = 0; i < model.Media.Count; i++)
+                    {
+                        var media = model.Media[i];
+                        var fileKey = $"Media[{i}].File";
+                        var file = Request.Form.Files[fileKey];
+                        
+                        if (file != null && file.Length > 0)
+                        {
+                            try
+                            {
+                                var imageUrl = await ImageHelper.SaveMediaImageAsync(file, tempSurveyId, webRootPath);
+                                media.Url = imageUrl;
+                            }
+                            catch (ArgumentException ex)
+                            {
+                                ModelState.AddModelError($"Media[{i}].File", ex.Message);
+                            }
+                        }
+                    }
+                }
             }
 
             if (!ModelState.IsValid)
@@ -474,6 +517,53 @@ namespace NovoyaHope.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { success = true, message = "Опросник снят с публикации." });
+        }
+
+        // --- УДАЛЕНИЕ ОПРОСА ---
+
+        // POST /survey/delete/1
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var survey = await _context.Surveys
+                .Include(s => s.Questions)
+                    .ThenInclude(q => q.AnswerOptions)
+                .Include(s => s.Responses)
+                    .ThenInclude(r => r.UserAnswers)
+                .FirstOrDefaultAsync(s => s.Id == id);
+            
+            var userId = _userManager.GetUserId(User);
+
+            if (survey == null)
+            {
+                return NotFound();
+            }
+
+            // Проверка прав: только создатель может удалить свой опрос
+            if (survey.CreatorId != userId)
+            {
+                return Forbid();
+            }
+
+            try
+            {
+                // Удаление опроса (каскадное удаление настроено в ApplicationDbContext)
+                // Questions, AnswerOptions, Responses и UserAnswers удалятся автоматически
+                _context.Surveys.Remove(survey);
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Опрос успешно удален.";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                var logger = HttpContext.RequestServices.GetService<ILogger<SurveyController>>();
+                logger?.LogError(ex, "Ошибка при удалении опроса. SurveyId: {SurveyId}, UserId: {UserId}", id, userId);
+                
+                TempData["ErrorMessage"] = "Ошибка при удалении опроса. Попробуйте еще раз.";
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         // --- ШАБЛОНЫ ---

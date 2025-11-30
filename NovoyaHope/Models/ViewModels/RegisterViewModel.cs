@@ -6,11 +6,8 @@ namespace NovoyaHope.Models.ViewModels
     {
         [Required(ErrorMessage = "Введите Email")]
         [EmailAddress(ErrorMessage = "Некорректный формат Email")]
+        [Display(Name = "Email")]
         public string Email { get; set; }
-
-        [Required(ErrorMessage = "Введите имя пользователя")]
-        [Display(Name = "Имя пользователя")]
-        public string UserName { get; set; }
 
         [Required(ErrorMessage = "Введите пароль")]
         [StringLength(100, ErrorMessage = "Пароль должен содержать не менее {2} и не более {1} символов.", MinimumLength = 6)]

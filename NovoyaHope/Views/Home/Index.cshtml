@@ -22,7 +22,7 @@
                 <div class="hero-buttons">
                     @if (User.Identity?.IsAuthenticated == true)
                     {
-                        <a asp-controller="Survey" asp-action="Constructor" class="btn-hero-primary">
+                        <a asp-controller="Survey" asp-action="Edit" class="btn-hero-primary">
                             <i class="fas fa-plus-circle"></i>
                             Создать опрос
                         </a>
@@ -229,7 +229,7 @@
             </p>
             @if (User.Identity?.IsAuthenticated == true)
             {
-                <a asp-controller="Survey" asp-action="Constructor" class="btn-cta">
+                <a asp-controller="Survey" asp-action="Edit" class="btn-cta">
                     <i class="fas fa-plus-circle"></i>
                     Создать первый опрос
                 </a>

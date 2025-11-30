@@ -48,6 +48,8 @@ namespace NovoyaHope.Models
         // Навигационные свойства
         public ICollection<Question>? Questions { get; set; }
         public ICollection<SurveyResponse>? Responses { get; set; }
+        public ICollection<Section>? Sections { get; set; }
+        public ICollection<Media>? Media { get; set; }
     }
 
     public enum GradePublicationType

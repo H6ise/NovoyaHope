@@ -31,6 +31,8 @@ namespace NovoyaHope.Services
                 survey = await _context.Surveys
                     .Include(s => s.Questions)
                         .ThenInclude(q => q.AnswerOptions)
+                    .Include(s => s.Sections)
+                    .Include(s => s.Media)
                     .FirstOrDefaultAsync(s => s.Id == model.Id.Value && s.CreatorId == userId);
 
                 if (survey == null)
@@ -162,6 +164,77 @@ namespace NovoyaHope.Services
                 }
             }
 
+            // 4. Обновление Разделов (Sections)
+            if (survey.Sections == null)
+            {
+                survey.Sections = new List<Section>();
+            }
+
+            var sectionsList = model.Sections ?? new List<SaveSectionViewModel>();
+            
+            // Удаление разделов, которые были удалены в конструкторе
+            var modelSectionIds = sectionsList.Where(s => s.Id.HasValue).Select(s => s.Id.Value).ToList();
+            var sectionsToRemove = survey.Sections.Where(s => !modelSectionIds.Contains(s.Id)).ToList();
+            _context.Sections.RemoveRange(sectionsToRemove);
+
+            foreach (var sModel in sectionsList)
+            {
+                Section section;
+                if (sModel.Id.HasValue && sModel.Id.Value > 0)
+                {
+                    // Обновление существующего раздела
+                    section = survey.Sections.FirstOrDefault(s => s.Id == sModel.Id.Value);
+                    if (section == null) continue;
+                }
+                else
+                {
+                    // Добавление нового раздела
+                    section = new Section { SurveyId = survey.Id };
+                    survey.Sections.Add(section);
+                }
+
+                section.Title = sModel.Title;
+                section.Description = sModel.Description;
+                section.Order = sModel.Order;
+            }
+
+            // 5. Обновление Медиа-элементов (Images и Videos)
+            if (survey.Media == null)
+            {
+                survey.Media = new List<Media>();
+            }
+
+            var mediaList = model.Media ?? new List<SaveMediaViewModel>();
+            
+            // Удаление медиа, которые были удалены в конструкторе
+            var modelMediaIds = mediaList.Where(m => m.Id.HasValue).Select(m => m.Id.Value).ToList();
+            var mediaToRemove = survey.Media.Where(m => !modelMediaIds.Contains(m.Id)).ToList();
+            _context.Media.RemoveRange(mediaToRemove);
+
+            foreach (var mModel in mediaList)
+            {
+                Media media;
+                if (mModel.Id.HasValue && mModel.Id.Value > 0)
+                {
+                    // Обновление существующего медиа
+                    media = survey.Media.FirstOrDefault(m => m.Id == mModel.Id.Value);
+                    if (media == null) continue;
+                }
+                else
+                {
+                    // Добавление нового медиа
+                    media = new Media { SurveyId = survey.Id };
+                    survey.Media.Add(media);
+                }
+
+                media.Type = mModel.Type;
+                media.Url = mModel.Url;
+                media.Title = mModel.Title;
+                media.Description = mModel.Description;
+                media.Order = mModel.Order;
+                media.QuestionId = mModel.QuestionId;
+            }
+
             await _context.SaveChangesAsync();
             return survey.Id;
         }
@@ -174,6 +247,8 @@ namespace NovoyaHope.Services
                 .AsNoTracking() // Только для чтения
                 .Include(s => s.Questions.OrderBy(q => q.Order))
                     .ThenInclude(q => q.AnswerOptions.OrderBy(o => o.Order))
+                .Include(s => s.Sections.OrderBy(s => s.Order))
+                .Include(s => s.Media.OrderBy(m => m.Order))
                 .FirstOrDefaultAsync(s => s.Id == surveyId && s.CreatorId == userId);
 
             if (survey == null) return null;
@@ -184,18 +259,56 @@ namespace NovoyaHope.Services
             {
                 Id = survey.Id,
                 Title = survey.Title,
-                // ... и т.д.
+                Description = survey.Description,
+                Type = survey.Type,
+                IsPublished = survey.IsPublished,
+                EndDate = survey.EndDate,
+                IsAnonymous = survey.IsAnonymous,
+                IsTestMode = survey.IsTestMode,
+                GradePublication = survey.GradePublication,
+                ShowIncorrectAnswers = survey.ShowIncorrectAnswers,
+                ShowCorrectAnswers = survey.ShowCorrectAnswers,
+                ShowPoints = survey.ShowPoints,
+                DefaultMaxPoints = survey.DefaultMaxPoints,
+                ThemeColor = survey.ThemeColor,
+                BackgroundColor = survey.BackgroundColor,
+                HeaderImagePath = survey.HeaderImagePath,
+                HeaderFontFamily = survey.HeaderFontFamily,
+                HeaderFontSize = survey.HeaderFontSize,
+                QuestionFontFamily = survey.QuestionFontFamily,
+                QuestionFontSize = survey.QuestionFontSize,
+                TextFontFamily = survey.TextFontFamily,
+                TextFontSize = survey.TextFontSize,
                 Questions = survey.Questions.Select(q => new SaveQuestionViewModel
                 {
                     Id = q.Id,
                     Text = q.Text,
-                    // ...
+                    Type = q.Type,
+                    Order = q.Order,
+                    IsRequired = q.IsRequired,
                     Options = q.AnswerOptions.Select(o => new SaveAnswerOptionViewModel
                     {
                         Id = o.Id,
                         Text = o.Text,
-                        // ...
+                        Order = o.Order
                     }).ToList()
+                }).ToList(),
+                Sections = survey.Sections.Select(s => new SaveSectionViewModel
+                {
+                    Id = s.Id,
+                    Title = s.Title,
+                    Description = s.Description,
+                    Order = s.Order
+                }).ToList(),
+                Media = survey.Media.Select(m => new SaveMediaViewModel
+                {
+                    Id = m.Id,
+                    Type = m.Type,
+                    Url = m.Url,
+                    Title = m.Title,
+                    Description = m.Description,
+                    Order = m.Order,
+                    QuestionId = m.QuestionId
                 }).ToList()
             };
 

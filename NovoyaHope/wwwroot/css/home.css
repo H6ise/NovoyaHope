@@ -59,25 +59,31 @@
 .btn-hero-secondary {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     padding: 14px 32px;
     font-size: 1.1rem;
     font-weight: 600;
-    border-radius: 12px;
+    border-radius: 8px;
     text-decoration: none;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    cursor: pointer;
 }
 
 .btn-hero-primary {
     background-color: #2e7d32;
     color: white;
-    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+    box-shadow: 0 2px 8px rgba(46, 125, 50, 0.2);
 }
 
 .btn-hero-primary:hover {
     background-color: #1b5e20;
-    box-shadow: 0 6px 20px rgba(46, 125, 50, 0.4);
-    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+.btn-hero-primary i {
+    display: none; /* Скрываем иконки для чистого дизайна */
 }
 
 .btn-hero-secondary {
@@ -421,21 +427,28 @@
 .btn-cta {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 12px;
     padding: 16px 48px;
     background-color: white;
     color: #2e7d32;
     font-size: 1.2rem;
     font-weight: 600;
-    border-radius: 12px;
+    border-radius: 8px;
     text-decoration: none;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    cursor: pointer;
 }
 
 .btn-cta:hover {
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
-    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+}
+
+.btn-cta i {
+    display: none; /* Скрываем иконки для чистого дизайна */
 }
 
 /* Responsive Design */

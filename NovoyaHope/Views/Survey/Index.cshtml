@@ -11,6 +11,23 @@
 
 <div class="surveys-page">
     <div class="container">
+        <!-- Success/Error Messages -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success" style="margin-bottom: 24px; padding: 16px 20px; border-radius: 8px; background: #e8f5e9; color: #2e7d32; border-left: 4px solid #2e7d32; display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-check-circle"></i>
+                @TempData["SuccessMessage"]
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger" style="margin-bottom: 24px; padding: 16px 20px; border-radius: 8px; background: #ffebee; color: #c62828; border-left: 4px solid #c62828; display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-exclamation-circle"></i>
+                @TempData["ErrorMessage"]
+            </div>
+        }
+
         <!-- Page Header -->
         <div class="page-header">
             <div class="header-content">
@@ -107,9 +124,13 @@
                                     </button>
                                 }
                                 <div class="dropdown-divider"></div>
-                                <a href="#" class="dropdown-item text-danger">
-                                    <i class="fas fa-trash"></i> Удалить
-                                </a>
+                                <form method="post" asp-action="Delete" asp-route-id="@survey.Id" style="display: inline;" 
+                                      class="delete-survey-form" data-survey-title="@(string.IsNullOrEmpty(survey.Title) ? "Без названия" : survey.Title)">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="dropdown-item text-danger" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer;">
+                                        <i class="fas fa-trash"></i> Удалить
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -227,5 +248,18 @@
                 }
             });
         }
+
+        // Delete survey confirmation
+        document.addEventListener('DOMContentLoaded', function() {
+            const deleteForms = document.querySelectorAll('.delete-survey-form');
+            deleteForms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    const surveyTitle = this.getAttribute('data-survey-title');
+                    if (!confirm('Вы уверены, что хотите удалить опрос "' + surveyTitle + '"? Это действие нельзя отменить. Все ответы и данные будут удалены.')) {
+                        e.preventDefault();
+                    }
+                });
+            });
+        });
     </script>
 }

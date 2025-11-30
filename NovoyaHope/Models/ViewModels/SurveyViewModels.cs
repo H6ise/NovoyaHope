@@ -41,6 +41,37 @@ namespace NovoyaHope.Models.ViewModels
 
         // Список вопросов в текущем опросе
         public List<SaveQuestionViewModel> Questions { get; set; }
+        
+        // Список разделов в опросе
+        public List<SaveSectionViewModel> Sections { get; set; }
+        
+        // Список медиа-элементов (изображения и видео)
+        public List<SaveMediaViewModel> Media { get; set; }
+    }
+    
+    // ViewModel для раздела
+    public class SaveSectionViewModel
+    {
+        public int? Id { get; set; }
+        [Required]
+        public int Order { get; set; }
+        [Required(ErrorMessage = "Укажите заголовок раздела.")]
+        public string Title { get; set; }
+        public string? Description { get; set; }
+    }
+    
+    // ViewModel для медиа-элемента
+    public class SaveMediaViewModel
+    {
+        public int? Id { get; set; }
+        [Required]
+        public int Order { get; set; }
+        public MediaType Type { get; set; }
+        [Required(ErrorMessage = "Укажите URL или загрузите файл.")]
+        public string Url { get; set; }
+        public string? Title { get; set; }
+        public string? Description { get; set; }
+        public int? QuestionId { get; set; }
     }
 
     // Часть SaveSurveyViewModel: Модель для одного вопроса

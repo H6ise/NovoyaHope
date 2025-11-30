@@ -14,6 +14,12 @@ namespace NovoyaHope.Models.ViewModels
         // Важно: в ASP.NET Core MVC при Model Binding это будет массив 
         // или список, где каждое Question будет иметь свои Options.
         public List<Question> Questions { get; set; }
+        
+        // Коллекция разделов опроса
+        public List<Section> Sections { get; set; }
+        
+        // Коллекция медиа-элементов (изображения и видео)
+        public List<Media> Media { get; set; }
 
         // Данные ответов для вкладки "Ответы"
         public SurveyResultsViewModel? ResultsData { get; set; }

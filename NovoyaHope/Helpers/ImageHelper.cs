@@ -162,6 +162,30 @@ namespace NovoyaHope.Helpers
 
             return $"{len:0.##} {sizes[order]}";
         }
+
+        /// <summary>
+        /// Сохранить медиа-изображение для опроса
+        /// </summary>
+        public static async Task<string> SaveMediaImageAsync(IFormFile file, int surveyId, string webRootPath)
+        {
+            if (!IsValidImage(file))
+                throw new ArgumentException(GetValidationError(file));
+
+            var uploadsFolder = Path.Combine(webRootPath, "uploads", "surveys", surveyId.ToString(), "media");
+            Directory.CreateDirectory(uploadsFolder);
+
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            var uniqueFileName = $"{Guid.NewGuid()}{extension}";
+            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            // Сохранение файла
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(fileStream);
+            }
+
+            return $"/uploads/surveys/{surveyId}/media/{uniqueFileName}";
+        }
     }
 }
 

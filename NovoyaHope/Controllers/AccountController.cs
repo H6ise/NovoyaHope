@@ -15,6 +15,7 @@ namespace NovoyaHope.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IWebHostEnvironment _environment;
 
         // ВАЖНО: Роль "User" должна быть создана в DbInitializer!
@@ -23,10 +24,12 @@ namespace NovoyaHope.Controllers
         public AccountController(
             UserManager<ApplicationUser> userManager, 
             SignInManager<ApplicationUser> signInManager,
+            RoleManager<IdentityRole> roleManager,
             IWebHostEnvironment environment)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _roleManager = roleManager;
             _environment = environment;
         }
 
@@ -81,13 +84,32 @@ namespace NovoyaHope.Controllers
             ViewData["ReturnUrl"] = returnUrl;
             if (ModelState.IsValid)
             {
-                var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
+                var user = new ApplicationUser 
+                { 
+                    UserName = model.Email, 
+                    Email = model.Email,
+                    EmailConfirmed = true // Подтверждаем email сразу, так как RequireConfirmedAccount = false
+                };
                 var result = await _userManager.CreateAsync(user, model.Password);
 
                 if (result.Succeeded)
                 {
-                    // Назначаем стандартную роль "User"
-                    await _userManager.AddToRoleAsync(user, DefaultUserRole);
+                    // Проверяем существование роли и назначаем стандартную роль "User"
+                    if (await _roleManager.RoleExistsAsync(DefaultUserRole))
+                    {
+                        var roleResult = await _userManager.AddToRoleAsync(user, DefaultUserRole);
+                        if (!roleResult.Succeeded)
+                        {
+                            // Если не удалось добавить роль, логируем ошибки, но не блокируем регистрацию
+                            AddErrors(roleResult);
+                            // Продолжаем регистрацию, так как пользователь уже создан
+                        }
+                    }
+                    else
+                    {
+                        // Если роль не существует, добавляем ошибку, но не блокируем регистрацию
+                        ModelState.AddModelError(string.Empty, "Предупреждение: Роль пользователя не найдена. Обратитесь к администратору.");
+                    }
 
                     await _signInManager.SignInAsync(user, isPersistent: false);
                     return RedirectToLocal(returnUrl);

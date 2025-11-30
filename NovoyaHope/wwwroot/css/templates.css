@@ -46,24 +46,30 @@
 .btn-secondary-action {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     padding: 12px 24px;
     border-radius: 8px;
     font-weight: 600;
     text-decoration: none;
     transition: all var(--transition-base);
+    border: none;
+    cursor: pointer;
 }
 
 .btn-primary-action {
-    background-color: var(--primary-color);
+    background-color: #2e7d32;
     color: white;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 2px 8px rgba(46, 125, 50, 0.2);
 }
 
 .btn-primary-action:hover {
-    background-color: var(--primary-dark);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+    background-color: #1b5e20;
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+.btn-primary-action i {
+    display: none; /* Скрываем иконки для чистого дизайна */
 }
 
 .btn-secondary-action {

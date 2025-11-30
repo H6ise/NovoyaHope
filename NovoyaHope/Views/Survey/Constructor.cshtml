@@ -12,7 +12,7 @@
 
 <body data-survey-id="@Model.Survey.Id">
 
-    <form asp-controller="Survey" asp-action="Save" method="post" id="survey-form">
+    <form asp-controller="Survey" asp-action="Save" method="post" id="survey-form" enctype="multipart/form-data">
         @Html.AntiForgeryToken()
         <input type="hidden" name="Survey.Id" value="@Model.Survey.Id" />
         <input type="hidden" name="Survey.IsPublished" value="@Model.Survey.IsPublished.ToString()" />
@@ -75,13 +75,157 @@
                                name="Survey.Description">
                     </div>
 
-                    @if (Model.Questions != null)
-                    {
-                        foreach (var question in Model.Questions.OrderBy(q => q.Order))
+                    @* Рендеринг разделов, медиа и вопросов в правильном порядке *@
+                    @{
+                        // Создаем объединенный список всех элементов с их порядком
+                        var allElements = new List<dynamic>();
+                        
+                        // Добавляем разделы
+                        if (Model.Sections != null)
                         {
+                            foreach (var section in Model.Sections.OrderBy(s => s.Order))
+                            {
+                                allElements.Add(new { Type = "Section", Order = section.Order, Data = section });
+                            }
+                        }
+                        
+                        // Добавляем медиа
+                        if (Model.Media != null)
+                        {
+                            foreach (var media in Model.Media.OrderBy(m => m.Order))
+                            {
+                                allElements.Add(new { Type = "Media", Order = media.Order, Data = media });
+                            }
+                        }
+                        
+                        // Добавляем вопросы
+                        if (Model.Questions != null)
+                        {
+                            foreach (var question in Model.Questions.OrderBy(q => q.Order))
+                            {
+                                allElements.Add(new { Type = "Question", Order = question.Order, Data = question });
+                            }
+                        }
+                        
+                        // Сортируем по порядку
+                        allElements = allElements.OrderBy(e => e.Order).ToList();
+                    }
+                    
+                    @foreach (var element in allElements)
+                    {
+                        if (element.Type == "Section")
+                        {
+                            var sectionItem = (Section)element.Data;
+                            <div class="question-block section-block" data-section-id="@sectionItem.Id" data-type="section">
+                                <input type="hidden" name="Sections[@sectionItem.Id].Id" value="@sectionItem.Id">
+                                <div class="section-header">
+                                    <input type="text" class="editor-title-input" 
+                                           placeholder="Заголовок раздела" 
+                                           value="@sectionItem.Title"
+                                           name="Sections[@sectionItem.Id].Title"
+                                           style="font-size: 1.3rem; font-weight: 600;">
+                                    <input type="hidden" name="Sections[@sectionItem.Id].Order" value="@sectionItem.Order">
+                                </div>
+                                <div class="section-body" style="margin-top: 15px;">
+                                    <textarea class="question-input" 
+                                              placeholder="Описание раздела (необязательно)" 
+                                              name="Sections[@sectionItem.Id].Description"
+                                              rows="3"
+                                              style="width: 100%; resize: vertical;">@sectionItem.Description</textarea>
+                                </div>
+                                <div class="question-footer">
+                                    <button type="button" class="btn-icon delete-btn" title="Удалить" onclick="deleteElement(this)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                    <span style="color: #5f6368; font-size: 0.9rem; margin-left: auto;">
+                                        <i class="fas fa-layer-group"></i> Раздел
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                        else if (element.Type == "Media")
+                        {
+                            var media = (Media)element.Data;
+                            <div class="question-block media-block" data-media-id="@media.Id" data-type="@(media.Type == MediaType.Image ? "image" : "video")">
+                                <input type="hidden" name="Media[@media.Id].Id" value="@media.Id">
+                                <div class="media-header" style="margin-bottom: 15px;">
+                                    <i class="fas fa-@(media.Type == MediaType.Image ? "image" : "video")" style="color: var(--primary-green); font-size: 1.5rem; margin-right: 10px;"></i>
+                                    <input type="text" class="question-input" 
+                                           placeholder="Название @(media.Type == MediaType.Image ? "изображения" : "видео") (необязательно)" 
+                                           value="@media.Title"
+                                           name="Media[@media.Id].Title"
+                                           style="font-size: 1.1rem;">
+                                    <input type="hidden" name="Media[@media.Id].Type" value="@media.Type">
+                                    <input type="hidden" name="Media[@media.Id].Order" value="@media.Order">
+                                </div>
+                                <div class="media-body">
+                                    @if (media.Type == MediaType.Image)
+                                    {
+                                        <div class="image-upload-area" style="border: 2px dashed #dadce0; border-radius: 8px; padding: 30px; text-align: center; background: #f5faf5;">
+                                            @if (!string.IsNullOrEmpty(media.Url))
+                                            {
+                                                <img src="@media.Url" alt="@media.Title" style="max-width: 100%; max-height: 300px; border-radius: 8px; margin-bottom: 15px;">
+                                            }
+                                            else
+                                            {
+                                                <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: var(--primary-green); margin-bottom: 15px; display: block;"></i>
+                                                <p style="color: #5f6368; margin-bottom: 10px;">Перетащите изображение сюда или</p>
+                                            }
+                                            <label class="btn-primary" style="display: inline-block; cursor: pointer;">
+                                                Выбрать файл
+                                                <input type="file" accept="image/*" style="display: none;" 
+                                                       onchange="handleImageUpload(this, @media.Id)" 
+                                                       name="Media[@media.Id].File">
+                                            </label>
+                                            <input type="text" class="question-input" 
+                                                   placeholder="или введите URL изображения" 
+                                                   value="@media.Url"
+                                                   name="Media[@media.Id].Url"
+                                                   style="margin-top: 15px;">
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="video-upload-area" style="border: 2px dashed #dadce0; border-radius: 8px; padding: 30px; text-align: center; background: #f5faf5;">
+                                            <i class="fas fa-play-circle" style="font-size: 3rem; color: var(--primary-green); margin-bottom: 15px; display: block;"></i>
+                                            <p style="color: #5f6368; margin-bottom: 10px;">Вставьте ссылку на YouTube или введите URL</p>
+                                            <input type="text" class="question-input" 
+                                                   placeholder="https://www.youtube.com/watch?v=..." 
+                                                   value="@media.Url"
+                                                   name="Media[@media.Id].Url"
+                                                   style="margin-top: 10px; width: 100%;">
+                                            <p style="color: #999; font-size: 0.85rem; margin-top: 10px;">
+                                                Поддерживаются: YouTube, Vimeo, или прямая ссылка на видео
+                                            </p>
+                                        </div>
+                                    }
+                                    <textarea class="question-input" 
+                                              placeholder="Описание @(media.Type == MediaType.Image ? "изображения" : "видео") (необязательно)" 
+                                              name="Media[@media.Id].Description"
+                                              rows="2"
+                                              style="margin-top: 15px; width: 100%; resize: vertical;">@media.Description</textarea>
+                                </div>
+                                <div class="question-footer">
+                                    <button type="button" class="btn-icon delete-btn" title="Удалить" onclick="deleteElement(this)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                    <span style="color: #5f6368; font-size: 0.9rem; margin-left: auto;">
+                                        <i class="fas fa-@(media.Type == MediaType.Image ? "image" : "video")"></i> @(media.Type == MediaType.Image ? "Изображение" : "Видео")
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                        else if (element.Type == "Question")
+                        {
+                            var question = (Question)element.Data;
                             // Рендеринг сохраненного вопроса (упрощенный пример)
                             <div class="question-block" data-question-id="@question.Id">
+                                <input type="hidden" name="Questions[@question.Id].Id" value="@question.Id">
+                                <input type="hidden" name="Questions[@question.Id].Order" value="@question.Order">
                                 <div class="question-header">
+                                    <div class="drag-handle">
+                                        <i class="fas fa-grip-vertical"></i>
+                                    </div>
                                     <input type="text" class="question-input question-text-input"
                                            placeholder="Вопрос без заголовка"
                                            value="@question.Text"
@@ -111,6 +255,10 @@
                                         foreach (var option in question.Options.OrderBy(o => o.Order))
                                         {
                                             <div class="option-item" data-option-id="@option.Id">
+                                                <input type="hidden" name="Questions[@question.Id].Options[@option.Id].Id" value="@option.Id">
+                                                <div class="option-drag-handle">
+                                                    <i class="fas fa-grip-vertical"></i>
+                                                </div>
                                                 <input type="@(question.Type == QuestionType.MultipleChoice ? "checkbox" : "radio")" disabled style="margin-right: 10px;">
                                                 <input type="text" class="option-input"
                                                        value="@option.Text"

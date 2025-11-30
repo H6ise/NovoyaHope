@@ -7,6 +7,7 @@ let newMediaCounter = -1;
 document.addEventListener('DOMContentLoaded', () => {
     setupBlockActivation();
     setupFAB();
+    setupDragAndDrop();
     
     // Делаем функции глобально доступными
     window.addNewQuestion = addNewQuestion;
@@ -97,6 +98,9 @@ function getOptionHtml(questionId, text = 'Вариант', isOther = false, que
 
     const baseHtml = `
         <div class="option-item" data-option-id="${tempOptionId}">
+            <div class="option-drag-handle">
+                <i class="fas fa-grip-vertical"></i>
+            </div>
             <input type="${inputType}" disabled style="margin-right: 10px;">
             <input type="text" class="option-input" placeholder="Вариант" 
                    value="${isOther ? 'Другое...' : text}" 
@@ -121,6 +125,9 @@ function getNewQuestionHtml(tempId) {
     return `
     <div class="question-block active" data-question-id="${tempId}" data-is-new="true">
         <div class="question-header">
+            <div class="drag-handle">
+                <i class="fas fa-grip-vertical"></i>
+            </div>
             <input type="text" class="question-input question-text-input" 
                    placeholder="Вопрос без заголовка" value="" 
                    name="Questions[${tempId}].Text">
@@ -203,6 +210,7 @@ function addNewQuestion() {
     // 6. Прокручиваем и активируем слушателей
     insertedBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
     setupBlockActivation(); // Перенастраиваем слушателей кликов
+    reinitializeQuestionDragAndDrop(); // Переинициализируем drag-and-drop
 
     // Дополнительный шаг: фокусируемся на поле ввода вопроса
     const textInput = insertedBlock.querySelector('.question-text-input');
@@ -230,6 +238,9 @@ function addOptionToQuestion(questionId) {
 
     // Вставляем новый вариант перед кнопкой "Добавить вариант"
     addOptionArea.insertAdjacentHTML('beforebegin', newOptionHtml);
+
+    // Переинициализируем drag-and-drop для вариантов ответов
+    reinitializeOptionDragAndDrop(questionId);
 
     // Фокусируемся на новом поле ввода
     addOptionArea.previousElementSibling.querySelector('.option-input').focus();
@@ -383,6 +394,9 @@ function changeQuestionType(selectElement, questionId) {
                 </div>
             `;
         }
+        
+        // Переинициализируем drag-and-drop для вариантов ответов
+        reinitializeOptionDragAndDrop(questionId);
     }
 
     // Обновляем тип инпутов в options (если они есть)
@@ -446,6 +460,9 @@ function duplicateQuestion(button) {
     
     // Перенастраиваем слушателей
     setupBlockActivation();
+    
+    // Переинициализируем drag-and-drop
+    reinitializeQuestionDragAndDrop();
 }
 
 // ===========================================
@@ -727,4 +744,278 @@ function resetImageUpload(button, mediaId) {
                name="Media[${mediaId}].Url"
                style="margin-top: 15px;">
     `;
+}
+
+// ===========================================
+// DRAG AND DROP ФУНКЦИОНАЛЬНОСТЬ
+// ===========================================
+
+function setupDragAndDrop() {
+    setupQuestionDragAndDrop();
+    setupOptionDragAndDrop();
+}
+
+// Drag-and-drop для вопросов
+function setupQuestionDragAndDrop() {
+    const questionsContainer = document.getElementById('questions-container');
+    if (!questionsContainer) return;
+
+    // Исключаем первый блок (заголовок формы)
+    const questionBlocks = Array.from(questionsContainer.querySelectorAll('.question-block')).filter(block => {
+        return !block.querySelector('#survey-title-input');
+    });
+
+    questionBlocks.forEach(block => {
+        // Добавляем иконку для перетаскивания
+        if (!block.querySelector('.drag-handle')) {
+            const dragHandle = document.createElement('div');
+            dragHandle.className = 'drag-handle';
+            dragHandle.innerHTML = '<i class="fas fa-grip-vertical"></i>';
+            dragHandle.title = 'Перетащите для изменения порядка';
+            
+            const questionHeader = block.querySelector('.question-header');
+            if (questionHeader) {
+                questionHeader.insertBefore(dragHandle, questionHeader.firstChild);
+            }
+        }
+
+        block.draggable = true;
+        block.classList.add('draggable-question');
+
+        block.addEventListener('dragstart', (e) => {
+            // Игнорируем события от вариантов ответов и их элементов
+            if (e.target.closest('.option-item') || e.target.closest('.option-drag-handle') || 
+                e.target.closest('.options-container')) {
+                e.preventDefault();
+                return;
+            }
+            
+            block.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', block.outerHTML);
+            e.dataTransfer.setData('text/plain', block.dataset.questionId || '');
+        });
+
+        block.addEventListener('dragend', () => {
+            block.classList.remove('dragging');
+            questionBlocks.forEach(b => b.classList.remove('drag-over'));
+        });
+
+        block.addEventListener('dragover', (e) => {
+            // Игнорируем события от вариантов ответов
+            if (e.target.closest('.option-item') || e.target.closest('.options-container')) {
+                return;
+            }
+            
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+
+            const afterElement = getDragAfterElement(questionsContainer, e.clientY, 'question-block');
+            const dragging = document.querySelector('.dragging.question-block');
+            
+            if (!dragging) return; // Если перетаскивается не вопрос, выходим
+            
+            if (afterElement == null) {
+                questionsContainer.appendChild(dragging);
+            } else {
+                questionsContainer.insertBefore(dragging, afterElement);
+            }
+
+            updateQuestionOrder();
+        });
+
+        block.addEventListener('dragenter', (e) => {
+            // Игнорируем события от вариантов ответов
+            if (e.target.closest('.option-item') || e.target.closest('.options-container')) {
+                return;
+            }
+            
+            e.preventDefault();
+            if (!block.classList.contains('dragging')) {
+                block.classList.add('drag-over');
+            }
+        });
+
+        block.addEventListener('dragleave', (e) => {
+            // Игнорируем события от вариантов ответов
+            if (e.target.closest('.option-item') || e.target.closest('.options-container')) {
+                return;
+            }
+            block.classList.remove('drag-over');
+        });
+
+        block.addEventListener('drop', (e) => {
+            // Игнорируем события от вариантов ответов
+            if (e.target.closest('.option-item') || e.target.closest('.options-container')) {
+                return;
+            }
+            
+            e.preventDefault();
+            block.classList.remove('drag-over');
+            updateQuestionOrder();
+        });
+    });
+}
+
+// Drag-and-drop для вариантов ответов
+function setupOptionDragAndDrop() {
+    const optionContainers = document.querySelectorAll('.options-container');
+    
+    optionContainers.forEach(container => {
+        const optionItems = container.querySelectorAll('.option-item');
+        
+        optionItems.forEach(item => {
+            // Добавляем иконку для перетаскивания
+            if (!item.querySelector('.option-drag-handle')) {
+                const dragHandle = document.createElement('div');
+                dragHandle.className = 'option-drag-handle';
+                dragHandle.innerHTML = '<i class="fas fa-grip-vertical"></i>';
+                dragHandle.title = 'Перетащите для изменения порядка';
+                
+                item.insertBefore(dragHandle, item.firstChild);
+            }
+
+            item.draggable = true;
+            item.classList.add('draggable-option');
+
+            item.addEventListener('dragstart', (e) => {
+                // Убеждаемся, что перетаскивается именно вариант ответа, а не карточка вопроса
+                if (e.target.closest('.question-block')) {
+                    const questionBlock = e.target.closest('.question-block');
+                    if (questionBlock && questionBlock.classList.contains('dragging')) {
+                        questionBlock.classList.remove('dragging');
+                    }
+                }
+                
+                item.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', item.outerHTML);
+                e.stopPropagation(); // Предотвращаем всплытие до карточки вопроса
+            });
+
+            item.addEventListener('dragend', (e) => {
+                item.classList.remove('dragging');
+                optionItems.forEach(o => o.classList.remove('drag-over'));
+                e.stopPropagation(); // Предотвращаем всплытие до карточки вопроса
+            });
+
+            item.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation(); // Предотвращаем всплытие до карточки вопроса
+                e.dataTransfer.dropEffect = 'move';
+
+                const afterElement = getDragAfterElement(container, e.clientY, 'option-item');
+                const dragging = container.querySelector('.dragging');
+                
+                if (dragging && afterElement == null) {
+                    container.insertBefore(dragging, container.querySelector('.add-option-area'));
+                } else if (dragging && afterElement) {
+                    container.insertBefore(dragging, afterElement);
+                }
+
+                updateOptionOrder(container);
+            });
+
+            item.addEventListener('dragenter', (e) => {
+                e.preventDefault();
+                e.stopPropagation(); // Предотвращаем всплытие до карточки вопроса
+                if (!item.classList.contains('dragging')) {
+                    item.classList.add('drag-over');
+                }
+            });
+
+            item.addEventListener('dragleave', (e) => {
+                item.classList.remove('drag-over');
+                e.stopPropagation(); // Предотвращаем всплытие до карточки вопроса
+            });
+
+            item.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation(); // Предотвращаем всплытие до карточки вопроса
+                item.classList.remove('drag-over');
+                updateOptionOrder(container);
+            });
+        });
+    });
+}
+
+// Вспомогательная функция для определения позиции после элемента
+function getDragAfterElement(container, y, className) {
+    const draggableElements = [...container.querySelectorAll(`.${className}:not(.dragging)`)];
+    
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+// Обновление порядка вопросов
+function updateQuestionOrder() {
+    const questionsContainer = document.getElementById('questions-container');
+    if (!questionsContainer) return;
+
+    const questionBlocks = Array.from(questionsContainer.querySelectorAll('.question-block')).filter(block => {
+        return !block.querySelector('#survey-title-input');
+    });
+
+    questionBlocks.forEach((block, index) => {
+        const questionId = block.dataset.questionId;
+        if (questionId) {
+            // Обновляем порядок в скрытых полях
+            const orderInput = block.querySelector('input[name*=".Order"]');
+            if (orderInput) {
+                orderInput.value = index;
+            } else {
+                // Создаем скрытое поле для порядка, если его нет
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = `Questions[${questionId}].Order`;
+                hiddenInput.value = index;
+                block.appendChild(hiddenInput);
+            }
+        }
+    });
+}
+
+// Обновление порядка вариантов ответов
+function updateOptionOrder(container) {
+    const questionId = container.dataset.questionId;
+    const optionItems = container.querySelectorAll('.option-item');
+    
+    optionItems.forEach((item, index) => {
+        const optionId = item.dataset.optionId;
+        if (optionId) {
+            // Обновляем порядок в скрытых полях
+            const orderInput = item.querySelector('input[name*=".Order"]');
+            if (orderInput) {
+                orderInput.value = index;
+            } else {
+                // Создаем скрытое поле для порядка, если его нет
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = `Questions[${questionId}].Options[${optionId}].Order`;
+                hiddenInput.value = index;
+                item.appendChild(hiddenInput);
+            }
+        }
+    });
+}
+
+// Переинициализация drag-and-drop после добавления нового вопроса
+function reinitializeQuestionDragAndDrop() {
+    setupQuestionDragAndDrop();
+}
+
+// Переинициализация drag-and-drop после добавления нового варианта ответа
+function reinitializeOptionDragAndDrop(questionId) {
+    const container = document.querySelector(`.options-container[data-question-id="${questionId}"]`);
+    if (container) {
+        setupOptionDragAndDrop();
+    }
 }
