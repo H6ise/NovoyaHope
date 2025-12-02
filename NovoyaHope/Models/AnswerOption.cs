@@ -12,5 +12,6 @@ namespace NovoyaHope.Models
 
         public string Text { get; set; }
         public int Order { get; set; }
+        public bool IsOther { get; set; }
     }
 }

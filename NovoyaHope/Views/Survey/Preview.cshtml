@@ -2,7 +2,8 @@
 @using NovoyaHope.Models
 
 @{
-    ViewData["Title"] = "Предпросмотр: " + Model.Title;
+    // Удаляем HTML теги из заголовка для использования в title страницы
+    ViewData["Title"] = "Предпросмотр: " + System.Text.RegularExpressions.Regex.Replace(Model.Title ?? "", "<.*?>", "").Trim();
     Layout = null; // Без layout для чистого предпросмотра
 }
 
@@ -134,6 +135,47 @@
             font-family: '@(Model.TextFontFamily ?? "Roboto")', sans-serif;
             color: #202124;
             margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        /* Стили для форматирования в заголовке и описании */
+        .preview-title strong,
+        .preview-description strong {
+            font-weight: 600;
+        }
+
+        .preview-title em,
+        .preview-description em {
+            font-style: italic;
+        }
+
+        .preview-title u,
+        .preview-description u {
+            text-decoration: underline;
+        }
+
+        .preview-title a,
+        .preview-description a {
+            color: @(Model.ThemeColor ?? "#673AB7");
+            text-decoration: underline;
+        }
+
+        .preview-title a:hover,
+        .preview-description a:hover {
+            opacity: 0.8;
+        }
+
+        .preview-title ul,
+        .preview-description ul,
+        .preview-title ol,
+        .preview-description ol {
+            margin: 10px 0;
+            padding-left: 30px;
+        }
+
+        .preview-title li,
+        .preview-description li {
+            margin: 5px 0;
         }
 
         .preview-divider {
@@ -190,6 +232,46 @@
             color: #5f6368;
             margin-top: 20px;
         }
+
+        /* Стили для форматирования в разделах */
+        .preview-section-title,
+        .preview-section-description {
+            line-height: 1.6;
+        }
+
+        .preview-section-title strong,
+        .preview-section-description strong {
+            font-weight: 600;
+        }
+
+        .preview-section-title em,
+        .preview-section-description em {
+            font-style: italic;
+        }
+
+        .preview-section-title u,
+        .preview-section-description u {
+            text-decoration: underline;
+        }
+
+        .preview-section-title a,
+        .preview-section-description a {
+            color: @(Model.ThemeColor ?? "#673AB7");
+            text-decoration: underline;
+        }
+
+        .preview-section-title ul,
+        .preview-section-description ul,
+        .preview-section-title ol,
+        .preview-section-description ol {
+            margin: 10px 0;
+            padding-left: 30px;
+        }
+
+        .preview-section-title li,
+        .preview-section-description li {
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body>
@@ -212,10 +294,10 @@
 
     <div class="preview-container">
         <div class="preview-header-card">
-            <h1 class="preview-title">@Model.Title</h1>
+            <h1 class="preview-title">@Html.Raw(Model.Title ?? "")</h1>
             @if (!string.IsNullOrWhiteSpace(Model.Description))
             {
-                <p class="preview-description">@Model.Description</p>
+                <div class="preview-description">@Html.Raw(Model.Description)</div>
             }
             <hr class="preview-divider" />
             <div style="font-size: 0.9rem; color: #5f6368;">
@@ -224,20 +306,126 @@
             </div>
         </div>
 
-        @foreach (var question in Model.Questions)
+        @{
+            // Создаем объединенный список всех элементов с их порядком
+            var allElements = new List<dynamic>();
+            
+            // Добавляем разделы
+            if (Model.Sections != null)
+            {
+                foreach (var sectionItem in Model.Sections.OrderBy(s => s.Order))
+                {
+                    allElements.Add(new { Type = "Section", Order = sectionItem.Order, Data = sectionItem });
+                }
+            }
+            
+            // Добавляем медиа
+            if (Model.Media != null)
+            {
+                foreach (var mediaItem in Model.Media.OrderBy(m => m.Order))
+                {
+                    allElements.Add(new { Type = "Media", Order = mediaItem.Order, Data = mediaItem });
+                }
+            }
+            
+            // Добавляем вопросы
+            if (Model.Questions != null)
+            {
+                foreach (var question in Model.Questions.OrderBy(q => q.Order))
+                {
+                    allElements.Add(new { Type = "Question", Order = question.Order, Data = question });
+                }
+            }
+            
+            // Сортируем по порядку
+            allElements = allElements.OrderBy(e => e.Order).ToList();
+        }
+
+        @foreach (var element in allElements)
         {
-            <div class="preview-question-card">
-                <div class="preview-question-text">
-                    @question.Text
-                    @if (question.IsRequired)
+            if (element.Type == "Section")
+            {
+                var sectionItem = (Section)element.Data;
+                <div class="preview-question-card" style="border-left: 4px solid @(Model.ThemeColor ?? "#673AB7");">
+                    <h2 class="preview-section-title" style="font-size: 20px; font-weight: 600; color: #202124; margin-bottom: 10px;">@Html.Raw(string.IsNullOrWhiteSpace(sectionItem.Title) ? "(Раздел без названия)" : sectionItem.Title)</h2>
+                    @if (!string.IsNullOrWhiteSpace(sectionItem.Description))
                     {
-                        <span style="color: #d93025;">*</span>
+                        <div class="preview-section-description" style="font-size: 14px; color: #5f6368; line-height: 1.6; margin: 0;">@Html.Raw(sectionItem.Description)</div>
                     }
                 </div>
-
-                <div class="preview-answer-area">
-                    @switch (question.Type)
+            }
+            else if (element.Type == "Media")
+            {
+                var mediaItem = (Media)element.Data;
+                <div class="preview-question-card">
+                    @if (!string.IsNullOrWhiteSpace(mediaItem.Title))
                     {
+                        <h3 style="font-size: 18px; font-weight: 600; color: #202124; margin-bottom: 15px;">@mediaItem.Title</h3>
+                    }
+                    @if (mediaItem.Type == MediaType.Image && !string.IsNullOrWhiteSpace(mediaItem.Url))
+                    {
+                        <div style="margin: 15px 0; text-align: center;">
+                            <img src="@mediaItem.Url" alt="@mediaItem.Title" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+                        </div>
+                    }
+                    else if (mediaItem.Type == MediaType.Video && !string.IsNullOrWhiteSpace(mediaItem.Url))
+                    {
+                        <div style="margin: 15px 0; position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+                            @if (mediaItem.Url.Contains("youtube.com") || mediaItem.Url.Contains("youtu.be"))
+                            {
+                                var videoId = "";
+                                if (mediaItem.Url.Contains("youtube.com/watch?v="))
+                                {
+                                    videoId = mediaItem.Url.Split(new[] { "v=" }, StringSplitOptions.None)[1].Split('&')[0];
+                                }
+                                else if (mediaItem.Url.Contains("youtu.be/"))
+                                {
+                                    videoId = mediaItem.Url.Split(new[] { "youtu.be/" }, StringSplitOptions.None)[1].Split('?')[0];
+                                }
+                                
+                                if (!string.IsNullOrEmpty(videoId))
+                                {
+                                    <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px;" 
+                                            src="https://www.youtube.com/embed/@videoId" 
+                                            frameborder="0" 
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                            allowfullscreen></iframe>
+                                }
+                                else
+                                {
+                                    <a href="@mediaItem.Url" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: @(Model.ThemeColor ?? "#673AB7"); color: white; text-decoration: none; border-radius: 8px; font-weight: 500;">Открыть видео</a>
+                                }
+                            }
+                            else
+                            {
+                                <video controls style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px;">
+                                    <source src="@mediaItem.Url" type="video/mp4">
+                                    Ваш браузер не поддерживает видео.
+                                </video>
+                            }
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(mediaItem.Description))
+                    {
+                        <p style="font-size: 14px; color: #5f6368; line-height: 1.6; margin-top: 15px; margin-bottom: 0;">@mediaItem.Description</p>
+                    }
+                </div>
+            }
+            else if (element.Type == "Question")
+            {
+                var question = (PassQuestionViewModel)element.Data;
+                <div class="preview-question-card">
+                    <div class="preview-question-text">
+                        @(string.IsNullOrWhiteSpace(question.Text) ? "(Вопрос без текста)" : question.Text)
+                        @if (question.IsRequired)
+                        {
+                            <span style="color: #d93025;">*</span>
+                        }
+                    </div>
+
+                    <div class="preview-answer-area">
+                        @switch (question.Type)
+                        {
                         case QuestionType.ShortText:
                             <input type="text" class="preview-input" placeholder="Краткий ответ" disabled>
                             break;
@@ -247,31 +435,40 @@
                             break;
 
                         case QuestionType.SingleChoice:
-                            @foreach (var option in question.Options)
+                            @if (question.Options != null)
                             {
-                                <label class="preview-option">
-                                    <input type="radio" disabled>
-                                    <span class="preview-option-text">@option.Text</span>
-                                </label>
+                                @foreach (var option in question.Options)
+                                {
+                                    <label class="preview-option">
+                                        <input type="radio" disabled>
+                                        <span class="preview-option-text">@(string.IsNullOrWhiteSpace(option.Text) ? "(Пустой вариант)" : option.Text)</span>
+                                    </label>
+                                }
                             }
                             break;
 
                         case QuestionType.MultipleChoice:
-                            @foreach (var option in question.Options)
+                            @if (question.Options != null)
                             {
-                                <label class="preview-option">
-                                    <input type="checkbox" disabled>
-                                    <span class="preview-option-text">@option.Text</span>
-                                </label>
+                                @foreach (var option in question.Options)
+                                {
+                                    <label class="preview-option">
+                                        <input type="checkbox" disabled>
+                                        <span class="preview-option-text">@(string.IsNullOrWhiteSpace(option.Text) ? "(Пустой вариант)" : option.Text)</span>
+                                    </label>
+                                }
                             }
                             break;
 
                         case QuestionType.Dropdown:
                             <select class="preview-input" style="max-width: 300px; padding: 10px 12px; border: 1px solid #dadce0; border-radius: 4px;" disabled>
                                 <option>Выберите вариант</option>
-                                @foreach (var option in question.Options)
+                                @if (question.Options != null)
                                 {
-                                    <option>@option.Text</option>
+                                    @foreach (var option in question.Options)
+                                    {
+                                        <option>@(string.IsNullOrWhiteSpace(option.Text) ? "(Пустой вариант)" : option.Text)</option>
+                                    }
                                 }
                             </select>
                             break;
@@ -311,9 +508,40 @@
                                 <span>Нажмите для выбора файла</span>
                             </div>
                             break;
-                    }
+
+                        case QuestionType.CheckboxGrid:
+                            @if (question.Options != null)
+                            {
+                                <div style="display: flex; flex-direction: column; gap: 10px;">
+                                    @foreach (var option in question.Options.OrderBy(o => o.Order))
+                                    {
+                                        <label class="preview-option">
+                                            <input type="checkbox" disabled>
+                                            <span class="preview-option-text">@(string.IsNullOrWhiteSpace(option.Text) ? "(Пустой вариант)" : option.Text)</span>
+                                        </label>
+                                    }
+                                </div>
+                            }
+                            break;
+
+                        case QuestionType.RadioGrid:
+                            @if (question.Options != null)
+                            {
+                                <div style="display: flex; flex-direction: column; gap: 10px;">
+                                    @foreach (var option in question.Options.OrderBy(o => o.Order))
+                                    {
+                                        <label class="preview-option">
+                                            <input type="radio" disabled>
+                                            <span class="preview-option-text">@(string.IsNullOrWhiteSpace(option.Text) ? "(Пустой вариант)" : option.Text)</span>
+                                        </label>
+                                    }
+                                </div>
+                            }
+                            break;
+                        }
+                    </div>
                 </div>
-            </div>
+            }
         }
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
@@ -327,7 +555,7 @@
     </div>
 
     <div class="preview-footer">
-        Создано с помощью <b>NovoyaHope Forms</b>
+        Создано с помощью <b>Poles Forms</b>
     </div>
 </body>
 </html>

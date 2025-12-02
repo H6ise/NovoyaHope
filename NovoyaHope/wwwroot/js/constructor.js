@@ -96,16 +96,27 @@ function getOptionHtml(questionId, text = 'Вариант', isOther = false, que
         inputType = questionType === 'MultipleChoice' ? 'checkbox' : 'radio';
     }
 
-    const baseHtml = `
-        <div class="option-item" data-option-id="${tempOptionId}">
-            <div class="option-drag-handle">
-                <i class="fas fa-grip-vertical"></i>
-            </div>
-            <input type="${inputType}" disabled style="margin-right: 10px;">
+    let optionInputHtml = '';
+    if (isOther) {
+        optionInputHtml = `
+            <span class="option-label">Другое:</span>
+            <input type="text" class="option-input option-other-input" placeholder="" 
+                   value="" 
+                   name="Questions[${questionId}].Options[${tempOptionId}].Text"
+                   style="border-bottom: 1px dotted #dadce0;">
+        `;
+    } else {
+        optionInputHtml = `
             <input type="text" class="option-input" placeholder="Вариант" 
-                   value="${isOther ? 'Другое...' : text}" 
+                   value="${text}" 
                    name="Questions[${questionId}].Options[${tempOptionId}].Text">
-            
+        `;
+    }
+
+    const baseHtml = `
+        <div class="option-item" data-option-id="${tempOptionId}" ${isOther ? 'data-is-other="true"' : ''}>
+            <input type="${inputType}" disabled style="margin-right: 10px;">
+            ${optionInputHtml}
             <input type="hidden" name="Questions[${questionId}].Options[${tempOptionId}].Order" value="${Math.abs(tempOptionId)}">
             <input type="hidden" name="Questions[${questionId}].Options[${tempOptionId}].IsOther" value="${isOther}">
 
@@ -125,48 +136,69 @@ function getNewQuestionHtml(tempId) {
     return `
     <div class="question-block active" data-question-id="${tempId}" data-is-new="true">
         <div class="question-header">
-            <div class="drag-handle">
-                <i class="fas fa-grip-vertical"></i>
+            <div class="question-header-left">
+                <div class="drag-handle">
+                    <i class="fas fa-grip-vertical"></i>
+                </div>
+                <input type="text" class="question-input question-text-input" 
+                       placeholder="Вопрос" value="" 
+                       name="Questions[${tempId}].Text">
+                <button type="button" class="btn-icon btn-add-image" title="Добавить изображение">
+                    <i class="fas fa-image"></i>
+                </button>
             </div>
-            <input type="text" class="question-input question-text-input" 
-                   placeholder="Вопрос без заголовка" value="" 
-                   name="Questions[${tempId}].Text">
-            
-            <select class="form-control question-type-select" 
-                    name="Questions[${tempId}].Type"
-                    onchange="changeQuestionType(this, ${tempId})">
-                <option value="SingleChoice" selected>Один из списка</option>
-                <option value="MultipleChoice">Несколько из списка</option>
-                <option value="Dropdown">Раскрывающийся список</option>
-                <option value="ShortText">Текст (строка)</option>
-                <option value="ParagraphText">Текст (абзац)</option>
-                <option value="FileUpload">Загрузка файлов</option>
-                <option value="Scale">Шкала</option>
-                <option value="Rating">Оценка ⭐</option>
-                <option value="CheckboxGrid">Сетка (множественный выбор)</option>
-                <option value="RadioGrid">Сетка флажков</option>
-                <option value="Date">Дата</option>
-                <option value="Time">Время</option>
-            </select>
+            <div class="question-header-right">
+                <select class="form-control question-type-select" 
+                        name="Questions[${tempId}].Type"
+                        onchange="changeQuestionType(this, ${tempId})">
+                    <option value="SingleChoice" selected>Один из списка</option>
+                    <option value="MultipleChoice">Несколько из списка</option>
+                    <option value="Dropdown">Раскрывающийся список</option>
+                    <option value="ShortText">Текст (строка)</option>
+                    <option value="ParagraphText">Текст (абзац)</option>
+                    <option value="FileUpload">Загрузка файлов</option>
+                    <option value="Scale">Шкала</option>
+                    <option value="Rating">Оценка ⭐</option>
+                    <option value="CheckboxGrid">Сетка (множественный выбор)</option>
+                    <option value="RadioGrid">Сетка флажков</option>
+                    <option value="Date">Дата</option>
+                    <option value="Time">Время</option>
+                </select>
+            </div>
         </div>
 
         <div class="question-body options-container" data-question-id="${tempId}">
             ${defaultOptionHtml}
             
-            <div class="add-option-area" onclick="addOptionToQuestion(${tempId})">
+            <div class="add-option-area">
                 <input type="radio" disabled style="margin-right: 10px;">
-                <span class="add-option-link">Добавить вариант</span>
+                <span class="add-option-link" onclick="addOptionToQuestion(${tempId})">Добавить вариант</span>
+                <span class="add-option-separator">или</span>
+                <span class="add-option-other" onclick="addOtherOption(${tempId})">добавить вариант "Другое"</span>
             </div>
         </div>
 
         <div class="question-footer">
-            <button type="button" class="btn-icon duplicate-btn" title="Дублировать" onclick="duplicateQuestion(this)"><i class="far fa-copy"></i></button>
-            <button type="button" class="btn-icon delete-btn" title="Удалить" onclick="deleteQuestion(this)"><i class="fas fa-trash-alt"></i></button>
-            <div class="separator-line"></div>
-            <label class="required-label">
-                Обязательный вопрос
-                <input type="checkbox" class="required-toggle" name="Questions[${tempId}].IsRequired">
-            </label>
+            <div class="question-footer-left">
+                <button type="button" class="btn-icon duplicate-btn" title="Дублировать" onclick="duplicateQuestion(this)">
+                    <i class="far fa-copy"></i>
+                </button>
+                <button type="button" class="btn-icon delete-btn" title="Удалить" onclick="deleteQuestion(this)">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+            <div class="question-footer-right">
+                <label class="required-label">
+                    Обязательный вопрос
+                    <label class="toggle-switch">
+                        <input type="checkbox" class="required-toggle" name="Questions[${tempId}].IsRequired">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </label>
+                <button type="button" class="btn-icon btn-more-options" title="Дополнительные опции">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+            </div>
         </div>
     </div>
     `;
@@ -244,6 +276,29 @@ function addOptionToQuestion(questionId) {
 
     // Фокусируемся на новом поле ввода
     addOptionArea.previousElementSibling.querySelector('.option-input').focus();
+}
+
+function addOtherOption(questionId) {
+    const container = document.querySelector(`.question-block[data-question-id="${questionId}"] .options-container`);
+    const addOptionArea = container.querySelector('.add-option-area');
+
+    // Проверяем, нет ли уже варианта "Другое"
+    const existingOther = container.querySelector('.option-item[data-is-other="true"]');
+    if (existingOther) {
+        return; // Уже есть вариант "Другое"
+    }
+
+    const questionBlock = document.querySelector(`.question-block[data-question-id="${questionId}"]`);
+    const typeSelect = questionBlock.querySelector('.question-type-select');
+    const questionType = typeSelect ? typeSelect.value : 'SingleChoice';
+    
+    const otherOptionHtml = getOptionHtml(questionId, 'Другое:', true, questionType);
+
+    // Вставляем вариант "Другое" перед кнопкой "Добавить вариант"
+    addOptionArea.insertAdjacentHTML('beforebegin', otherOptionHtml);
+
+    // Переинициализируем drag-and-drop для вариантов ответов
+    reinitializeOptionDragAndDrop(questionId);
 }
 
 function deleteOption(button) {
@@ -381,16 +436,18 @@ function changeQuestionType(selectElement, questionId) {
         // Для выпадающего списка показываем другой вид
         if (type === 'Dropdown') {
             container.innerHTML = optionsHtml + `
-                <div class="add-option-area" onclick="addOptionToQuestion(${questionId})">
+                <div class="add-option-area">
                     <span style="margin-right: 10px;">⊕</span>
-                    <span class="add-option-link">Добавить вариант</span>
+                    <span class="add-option-link" onclick="addOptionToQuestion(${questionId})">Добавить вариант</span>
                 </div>
             `;
         } else {
             container.innerHTML = optionsHtml + `
-                <div class="add-option-area" onclick="addOptionToQuestion(${questionId})">
+                <div class="add-option-area">
                     <input type="${inputType}" disabled style="margin-right: 10px;">
-                    <span class="add-option-link">Добавить вариант</span>
+                    <span class="add-option-link" onclick="addOptionToQuestion(${questionId})">Добавить вариант</span>
+                    <span class="add-option-separator">или</span>
+                    <span class="add-option-other" onclick="addOtherOption(${questionId})">добавить вариант "Другое"</span>
                 </div>
             `;
         }

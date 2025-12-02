@@ -65,14 +65,50 @@
 
                 <div class="questions-container" id="questions-container">
 
-                    <div class="question-block active" style="border-left: 7px solid var(--primary-color);">
-                        <input type="text" id="survey-title-input" class="editor-title-input"
-                               value="@(Model.Survey.Title ?? "Новая форма")" placeholder="Новая форма"
-                               name="Survey.Title">
+                    <div class="question-block form-header-block active" style="border-left: 7px solid var(--primary-color);">
+                        <div class="form-title-wrapper">
+                            <div contenteditable="true" id="survey-title-editor" class="editor-title-input-rich"
+                                 data-placeholder="Новая форма">
+                                @Html.Raw(Model.Survey.Title ?? "Новая форма")
+                            </div>
+                            <input type="hidden" id="survey-title-input" name="Survey.Title" value="@(Model.Survey.Title ?? "Новая форма")">
+                        </div>
 
-                        <input type="text" id="survey-description-input" class="question-input"
-                               value="@Model.Survey.Description" placeholder="Описание"
-                               name="Survey.Description">
+                        <div class="form-description-separator"></div>
+
+                        <div class="form-description-wrapper">
+                            <label class="form-description-label">Описание</label>
+                            <div contenteditable="true" id="survey-description-editor" class="rich-text-editor"
+                                 data-placeholder="Описание">
+                                @Html.Raw(Model.Survey.Description)
+                            </div>
+                            <textarea id="survey-description-input" name="Survey.Description" style="display: none;">@Model.Survey.Description</textarea>
+                        </div>
+
+                        <!-- Плавающая панель инструментов форматирования -->
+                        <div class="floating-toolbar" id="floating-toolbar" style="display: none;">
+                            <button type="button" class="toolbar-btn" data-command="bold" title="Жирный">
+                                <strong>B</strong>
+                            </button>
+                            <button type="button" class="toolbar-btn" data-command="italic" title="Курсив">
+                                <em>I</em>
+                            </button>
+                            <button type="button" class="toolbar-btn" data-command="underline" title="Подчеркнутый">
+                                <u>U</u>
+                            </button>
+                            <button type="button" class="toolbar-btn" data-command="createLink" title="Ссылка">
+                                <i class="fas fa-link"></i>
+                            </button>
+                            <button type="button" class="toolbar-btn" data-command="insertUnorderedList" title="Маркированный список">
+                                <i class="fas fa-list-ul"></i>
+                            </button>
+                            <button type="button" class="toolbar-btn" data-command="insertOrderedList" title="Нумерованный список">
+                                <i class="fas fa-list-ol"></i>
+                            </button>
+                            <button type="button" class="toolbar-btn" data-command="removeFormat" title="Очистить форматирование">
+                                <i class="fas fa-remove-format"></i>
+                            </button>
+                        </div>
                     </div>
 
                     @* Рендеринг разделов, медиа и вопросов в правильном порядке *@
@@ -218,71 +254,103 @@
                         else if (element.Type == "Question")
                         {
                             var question = (Question)element.Data;
-                            // Рендеринг сохраненного вопроса (упрощенный пример)
+                            // Рендеринг сохраненного вопроса
                             <div class="question-block" data-question-id="@question.Id">
                                 <input type="hidden" name="Questions[@question.Id].Id" value="@question.Id">
                                 <input type="hidden" name="Questions[@question.Id].Order" value="@question.Order">
                                 <div class="question-header">
-                                    <div class="drag-handle">
-                                        <i class="fas fa-grip-vertical"></i>
+                                    <div class="question-header-left">
+                                        <div class="drag-handle">
+                                            <i class="fas fa-grip-vertical"></i>
+                                        </div>
+                                        <input type="text" class="question-input question-text-input"
+                                               placeholder="Вопрос"
+                                               value="@question.Text"
+                                               name="Questions[@question.Id].Text">
+                                        <button type="button" class="btn-icon btn-add-image" title="Добавить изображение">
+                                            <i class="fas fa-image"></i>
+                                        </button>
                                     </div>
-                                    <input type="text" class="question-input question-text-input"
-                                           placeholder="Вопрос без заголовка"
-                                           value="@question.Text"
-                                           name="Questions[@question.Id].Text">
-
-                                    <select class="form-control question-type-select"
-                                            name="Questions[@question.Id].Type"
-                                            data-question-id="@question.Id"
-                                            onchange="changeQuestionType(this, @question.Id)">
-                                        <option value="SingleChoice" selected="@(question.Type == QuestionType.SingleChoice)">Один из списка</option>
-                                        <option value="MultipleChoice" selected="@(question.Type == QuestionType.MultipleChoice)">Несколько из списка</option>
-                                        <option value="Dropdown" selected="@(question.Type == QuestionType.Dropdown)">Раскрывающийся список</option>
-                                        <option value="ShortText" selected="@(question.Type == QuestionType.ShortText)">Текст (строка)</option>
-                                        <option value="ParagraphText" selected="@(question.Type == QuestionType.ParagraphText)">Текст (абзац)</option>
-                                        <option value="FileUpload" selected="@(question.Type == QuestionType.FileUpload)">Загрузка файлов</option>
-                                        <option value="Scale" selected="@(question.Type == QuestionType.Scale)">Шкала</option>
-                                        <option value="Rating" selected="@(question.Type == QuestionType.Rating)">Оценка ⭐</option>
-                                        <option value="CheckboxGrid" selected="@(question.Type == QuestionType.CheckboxGrid)">Сетка (множественный выбор)</option>
-                                        <option value="RadioGrid" selected="@(question.Type == QuestionType.RadioGrid)">Сетка флажков</option>
-                                        <option value="Date" selected="@(question.Type == QuestionType.Date)">Дата</option>
-                                        <option value="Time" selected="@(question.Type == QuestionType.Time)">Время</option>
-                                    </select>
+                                    <div class="question-header-right">
+                                        <select class="form-control question-type-select"
+                                                name="Questions[@question.Id].Type"
+                                                data-question-id="@question.Id"
+                                                onchange="changeQuestionType(this, @question.Id)">
+                                            <option value="SingleChoice" selected="@(question.Type == QuestionType.SingleChoice)">Один из списка</option>
+                                            <option value="MultipleChoice" selected="@(question.Type == QuestionType.MultipleChoice)">Несколько из списка</option>
+                                            <option value="Dropdown" selected="@(question.Type == QuestionType.Dropdown)">Раскрывающийся список</option>
+                                            <option value="ShortText" selected="@(question.Type == QuestionType.ShortText)">Текст (строка)</option>
+                                            <option value="ParagraphText" selected="@(question.Type == QuestionType.ParagraphText)">Текст (абзац)</option>
+                                            <option value="FileUpload" selected="@(question.Type == QuestionType.FileUpload)">Загрузка файлов</option>
+                                            <option value="Scale" selected="@(question.Type == QuestionType.Scale)">Шкала</option>
+                                            <option value="Rating" selected="@(question.Type == QuestionType.Rating)">Оценка ⭐</option>
+                                            <option value="CheckboxGrid" selected="@(question.Type == QuestionType.CheckboxGrid)">Сетка (множественный выбор)</option>
+                                            <option value="RadioGrid" selected="@(question.Type == QuestionType.RadioGrid)">Сетка флажков</option>
+                                            <option value="Date" selected="@(question.Type == QuestionType.Date)">Дата</option>
+                                            <option value="Time" selected="@(question.Type == QuestionType.Time)">Время</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div class="question-body options-container" data-question-id="@question.Id">
                                     @if (question.Options != null && question.Options.Any())
                                     {
                                         foreach (var option in question.Options.OrderBy(o => o.Order))
                                         {
-                                            <div class="option-item" data-option-id="@option.Id">
+                                            var isOther = option.IsOther;
+                                            <div class="option-item" data-option-id="@option.Id" @(isOther ? Html.Raw("data-is-other=\"true\"") : Html.Raw(""))>
                                                 <input type="hidden" name="Questions[@question.Id].Options[@option.Id].Id" value="@option.Id">
-                                                <div class="option-drag-handle">
-                                                    <i class="fas fa-grip-vertical"></i>
-                                                </div>
                                                 <input type="@(question.Type == QuestionType.MultipleChoice ? "checkbox" : "radio")" disabled style="margin-right: 10px;">
-                                                <input type="text" class="option-input"
-                                                       value="@option.Text"
-                                                       name="Questions[@question.Id].Options[@option.Id].Text">
+                                                @if (isOther)
+                                                {
+                                                    <span class="option-label">Другое:</span>
+                                                    <input type="text" class="option-input option-other-input"
+                                                           placeholder=""
+                                                           value=""
+                                                           name="Questions[@question.Id].Options[@option.Id].Text"
+                                                           style="border-bottom: 1px dotted #dadce0;">
+                                                }
+                                                else
+                                                {
+                                                    <input type="text" class="option-input"
+                                                           value="@option.Text"
+                                                           name="Questions[@question.Id].Options[@option.Id].Text">
+                                                }
                                                 <input type="hidden" name="Questions[@question.Id].Options[@option.Id].Order" value="@option.Order">
+                                                <input type="hidden" name="Questions[@question.Id].Options[@option.Id].IsOther" value="@isOther.ToString().ToLower()">
                                                 <button type="button" class="btn-icon delete-option-btn" onclick="deleteOption(this)">
                                                     <i class="fas fa-times"></i>
                                                 </button>
                                             </div>
                                         }
                                     }
-                                    <div class="add-option-area" onclick="addOptionToQuestion(@question.Id)">
+                                    <div class="add-option-area">
                                         <input type="@(question.Type == QuestionType.MultipleChoice ? "checkbox" : "radio")" disabled style="margin-right: 10px;">
-                                        <span class="add-option-link">Добавить вариант</span>
+                                        <span class="add-option-link" onclick="addOptionToQuestion(@question.Id)">Добавить вариант</span>
+                                        <span class="add-option-separator">или</span>
+                                        <span class="add-option-other" onclick="addOtherOption(@question.Id)">добавить вариант "Другое"</span>
                                     </div>
                                 </div>
                                 <div class="question-footer">
-                                    <button type="button" class="btn-icon duplicate-btn" title="Дублировать" onclick="duplicateQuestion(this)"><i class="far fa-copy"></i></button>
-                                    <button type="button" class="btn-icon delete-btn" title="Удалить" onclick="deleteQuestion(this)"><i class="fas fa-trash-alt"></i></button>
-                                    <div class="separator-line"></div>
-                                    <label class="required-label">
-                                        Обязательный вопрос
-                                        <input type="checkbox" class="required-toggle" name="Questions[@question.Id].IsRequired" @(question.IsRequired ? "checked" : "")>
-                                    </label>
+                                    <div class="question-footer-left">
+                                        <button type="button" class="btn-icon duplicate-btn" title="Дублировать" onclick="duplicateQuestion(this)">
+                                            <i class="far fa-copy"></i>
+                                        </button>
+                                        <button type="button" class="btn-icon delete-btn" title="Удалить" onclick="deleteQuestion(this)">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                    <div class="question-footer-right">
+                                        <label class="required-label">
+                                            Обязательный вопрос
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" class="required-toggle" name="Questions[@question.Id].IsRequired" @(question.IsRequired ? "checked" : "")>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </label>
+                                        <button type="button" class="btn-icon btn-more-options" title="Дополнительные опции">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         }
@@ -641,7 +709,19 @@
                             </p>
                         </div>
                         <div class="settings-section-content collapsible-content" style="display: none;">
-                            <p class="settings-placeholder">Настройки презентации будут здесь</p>
+                            <div class="settings-subsection">
+                                <div class="toggle-option">
+                                    <div class="toggle-option-content">
+                                        <div class="toggle-option-text">
+                                            <strong>DOC</strong>
+                                        </div>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" name="Survey.IsDocumentMode" id="isDocumentMode">
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -1026,8 +1106,174 @@
                 redoBtn.disabled = currentHistoryIndex >= actionHistory.length - 1;
             }
 
+            // ===========================================
+            // RICH TEXT EDITOR ДЛЯ ЗАГОЛОВКА И ОПИСАНИЯ
+            // ===========================================
+            
+            let currentActiveEditor = null;
+            let toolbarTimeout = null;
+            
+            function initRichTextEditor() {
+                const titleEditor = document.getElementById('survey-title-editor');
+                const titleInput = document.getElementById('survey-title-input');
+                const descriptionEditor = document.getElementById('survey-description-editor');
+                const descriptionTextarea = document.getElementById('survey-description-input');
+                const floatingToolbar = document.getElementById('floating-toolbar');
+                
+                if (!floatingToolbar) return;
+                
+                // Функция синхронизации заголовка
+                function syncTitle() {
+                    if (titleEditor && titleInput) {
+                        // Сохраняем HTML для сохранения форматирования
+                        titleInput.value = titleEditor.innerHTML || titleEditor.innerText || '';
+                    }
+                }
+                
+                // Функция синхронизации описания
+                function syncDescription() {
+                    if (descriptionEditor && descriptionTextarea) {
+                        descriptionTextarea.value = descriptionEditor.innerHTML;
+                    }
+                }
+                
+                // Функция показа панели инструментов
+                function showToolbar(editor) {
+                    if (toolbarTimeout) {
+                        clearTimeout(toolbarTimeout);
+                    }
+                    currentActiveEditor = editor;
+                    
+                    // Получаем позицию редактора
+                    const rect = editor.getBoundingClientRect();
+                    const containerRect = editor.closest('.form-header-block').getBoundingClientRect();
+                    
+                    // Показываем панель
+                    floatingToolbar.style.display = 'flex';
+                    
+                    // Позиционируем панель над редактируемым полем
+                    floatingToolbar.style.top = (rect.top - containerRect.top - 50) + 'px';
+                    floatingToolbar.style.left = '0px';
+                }
+                
+                // Функция скрытия панели инструментов
+                function hideToolbar() {
+                    toolbarTimeout = setTimeout(() => {
+                        floatingToolbar.style.display = 'none';
+                        currentActiveEditor = null;
+                    }, 200);
+                }
+                
+                // Обработка фокуса на заголовке
+                if (titleEditor) {
+                    titleEditor.addEventListener('focus', function() {
+                        showToolbar(titleEditor);
+                        syncTitle();
+                    });
+                    
+                    titleEditor.addEventListener('blur', function() {
+                        hideToolbar();
+                        syncTitle();
+                    });
+                    
+                    titleEditor.addEventListener('input', syncTitle);
+                    titleEditor.addEventListener('keyup', syncTitle);
+                    titleEditor.addEventListener('mouseup', function() {
+                        if (document.getSelection().toString().length > 0) {
+                            showToolbar(titleEditor);
+                        }
+                    });
+                }
+                
+                // Обработка фокуса на описании
+                if (descriptionEditor) {
+                    descriptionEditor.addEventListener('focus', function() {
+                        showToolbar(descriptionEditor);
+                        syncDescription();
+                    });
+                    
+                    descriptionEditor.addEventListener('blur', function() {
+                        hideToolbar();
+                        syncDescription();
+                    });
+                    
+                    descriptionEditor.addEventListener('input', syncDescription);
+                    descriptionEditor.addEventListener('keyup', syncDescription);
+                    descriptionEditor.addEventListener('mouseup', function() {
+                        if (document.getSelection().toString().length > 0) {
+                            showToolbar(descriptionEditor);
+                        }
+                    });
+                }
+                
+                // Обработка кнопок панели инструментов
+                floatingToolbar.addEventListener('click', function(e) {
+                    const btn = e.target.closest('.toolbar-btn');
+                    if (!btn || !currentActiveEditor) return;
+                    
+                    e.preventDefault();
+                    const command = btn.getAttribute('data-command');
+                    
+                    // Фокусируемся на активном редакторе
+                    currentActiveEditor.focus();
+                    
+                    // Восстанавливаем выделение, если оно было
+                    const selection = window.getSelection();
+                    if (selection.rangeCount > 0) {
+                        selection.removeAllRanges();
+                        const range = document.createRange();
+                        range.selectNodeContents(currentActiveEditor);
+                        selection.addRange(range);
+                    }
+                    
+                    if (command === 'createLink') {
+                        const url = prompt('Введите URL ссылки:');
+                        if (url) {
+                            document.execCommand('createLink', false, url);
+                        }
+                    } else if (command === 'removeFormat') {
+                        document.execCommand('removeFormat', false, null);
+                        document.execCommand('unlink', false, null);
+                    } else {
+                        document.execCommand(command, false, null);
+                    }
+                    
+                    // Синхронизируем содержимое
+                    if (currentActiveEditor === titleEditor) {
+                        syncTitle();
+                    } else if (currentActiveEditor === descriptionEditor) {
+                        syncDescription();
+                    }
+                });
+                
+                // Скрываем панель при клике вне редакторов
+                document.addEventListener('click', function(e) {
+                    if (!floatingToolbar.contains(e.target) && 
+                        !titleEditor?.contains(e.target) && 
+                        !descriptionEditor?.contains(e.target)) {
+                        hideToolbar();
+                    }
+                });
+                
+                // Инициализация содержимого
+                if (titleEditor && titleInput) {
+                    if (!titleEditor.innerHTML.trim() && titleInput.value) {
+                        titleEditor.innerHTML = titleInput.value || '';
+                    }
+                }
+                
+                if (descriptionEditor && descriptionTextarea) {
+                    if (!descriptionEditor.innerHTML.trim() && descriptionTextarea.value) {
+                        descriptionEditor.innerHTML = descriptionTextarea.value || '';
+                    }
+                }
+            }
+
             // Инициализация истории при загрузке страницы
             document.addEventListener('DOMContentLoaded', function() {
+                // Инициализируем rich text editor
+                initRichTextEditor();
+                
                 // Сохраняем начальное состояние
                 setTimeout(() => {
                     saveState();
@@ -1427,10 +1673,24 @@
                 const textFontFamily = form.querySelector('#textFontFamily')?.value || 'Roboto';
                 const textFontSize = parseInt(form.querySelector('#textFontSize')?.value || '11');
 
+                // Синхронизируем содержимое перед сохранением
+                const titleEditor = document.getElementById('survey-title-editor');
+                const titleInput = document.getElementById('survey-title-input');
+                const descriptionEditor = document.getElementById('survey-description-editor');
+                const descriptionTextarea = document.getElementById('survey-description-input');
+                
+                if (titleEditor && titleInput) {
+                    titleInput.value = titleEditor.innerHTML || titleEditor.innerText || '';
+                }
+                
+                if (descriptionEditor && descriptionTextarea) {
+                    descriptionTextarea.value = descriptionEditor.innerHTML;
+                }
+                
                 const data = {
                     Id: surveyId || null,
-                    Title: form.querySelector('#survey-title-input')?.value || '',
-                    Description: form.querySelector('#survey-description-input')?.value || '',
+                    Title: titleInput?.value || '',
+                    Description: descriptionTextarea?.value || '',
                     Type: 'Questionnaire', // Используем строковое значение enum
                     IsPublished: false,
                     IsAnonymous: true,

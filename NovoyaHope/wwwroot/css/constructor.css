@@ -114,7 +114,7 @@
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     padding: 25px;
     margin-bottom: 15px;
-    border-left: 6px solid transparent; /* Для индикации активного состояния */
+    border-left: 4px solid transparent; /* Для индикации активного состояния */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     opacity: 1;
@@ -124,7 +124,7 @@
     /* Активное/редактируемое состояние */
     .question-block.active,
     .question-block.active-block {
-        border-left-color: var(--primary-green);
+        border-left-color: #4285f4;
         box-shadow: 0 4px 16px var(--shadow);
         transform: translateY(-2px);
     }
@@ -165,18 +165,19 @@
     .drag-handle {
         cursor: grab;
         color: var(--text-gray);
-        margin-right: 10px;
-        padding: 4px 8px;
+        margin-right: 8px;
+        padding: 4px;
         display: inline-flex;
         align-items: center;
-        opacity: 0.5;
+        opacity: 0.4;
         transition: opacity 0.2s, color 0.2s;
         user-select: none;
+        font-size: 0.9rem;
     }
 
     .drag-handle:hover {
-        opacity: 1;
-        color: var(--primary-green);
+        opacity: 0.8;
+        color: #5f6368;
     }
 
     .drag-handle:active {
@@ -185,7 +186,33 @@
 
     .question-header {
         display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .question-header-left {
+        display: flex;
         align-items: center;
+        flex: 1;
+        gap: 10px;
+    }
+
+    .question-header-right {
+        display: flex;
+        align-items: center;
+    }
+
+    .btn-add-image {
+        color: #5f6368;
+        opacity: 0.7;
+        transition: opacity 0.2s, color 0.2s;
+    }
+
+    .btn-add-image:hover {
+        opacity: 1;
+        color: var(--primary-green);
     }
 
 .question-input, .option-input {
@@ -193,14 +220,19 @@
     border-bottom: 1px solid #dadce0;
     padding: 8px 0;
     font-size: 1rem;
-    width: 90%;
     outline: none;
     transition: border-bottom-color 0.2s;
+    background: transparent;
 }
 
     .question-input:focus, .option-input:focus {
         border-bottom-color: var(--primary-green);
         border-bottom-width: 2px;
+    }
+
+    .option-other-input {
+        border-bottom: 1px dotted #dadce0 !important;
+        color: #999;
     }
 
 /* Варианты ответов */
@@ -214,12 +246,18 @@
     margin-bottom: 10px;
     position: relative;
     transition: all 0.2s ease;
+    gap: 10px;
 }
 
     .option-item input[type="radio"],
     .option-item input[type="checkbox"] {
-        margin-right: 15px;
         accent-color: var(--primary-green);
+        flex-shrink: 0;
+    }
+
+    .option-item .option-input {
+        flex: 1;
+        min-width: 200px;
     }
 
     /* Drag-and-drop стили для вариантов ответов */
@@ -244,13 +282,14 @@
         padding: 4px;
         display: flex;
         align-items: center;
-        opacity: 0.5;
+        opacity: 0.4;
         transition: opacity 0.2s;
+        font-size: 0.85rem;
     }
 
     .option-drag-handle:hover {
-        opacity: 1;
-        color: var(--primary-green);
+        opacity: 0.8;
+        color: #5f6368;
     }
 
     .option-drag-handle:active {
@@ -488,13 +527,6 @@
    6. ДОПОЛНИТЕЛЬНЫЕ ЭЛЕМЕНТЫ UI
    ==================================== */
 
-.question-header {
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
-    margin-bottom: 20px;
-}
-
 .question-text-input {
     flex: 1;
     border: none;
@@ -503,6 +535,7 @@
     font-size: 1rem;
     outline: none;
     transition: border-bottom-color 0.2s;
+    min-width: 200px;
 }
 
 .question-text-input:focus {
@@ -512,13 +545,18 @@
 
 .question-type-select {
     min-width: 200px;
-    padding: 8px 12px;
+    padding: 8px 32px 8px 12px;
     border: 1px solid #dadce0;
     border-radius: 4px;
     background-color: #fff;
     font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235f6368' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 35px;
 }
 
 .question-type-select:hover {
@@ -544,6 +582,18 @@
     margin-top: 20px;
     padding-top: 15px;
     border-top: 1px solid #dadce0;
+}
+
+.question-footer-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.question-footer-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .btn-icon {
@@ -572,7 +622,7 @@
 .required-label {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     font-size: 0.9rem;
     color: #5f6368;
     cursor: pointer;
@@ -580,35 +630,73 @@
     user-select: none;
 }
 
+.required-label .toggle-switch {
+    width: 40px;
+    height: 24px;
+}
+
 .required-toggle {
     cursor: pointer;
-    width: 18px;
-    height: 18px;
-    accent-color: var(--primary-green);
+}
+
+.btn-more-options {
+    color: #5f6368;
+    opacity: 0.7;
+    transition: opacity 0.2s, color 0.2s;
+}
+
+.btn-more-options:hover {
+    opacity: 1;
+    color: var(--primary-green);
 }
 
 .add-option-area {
     display: flex;
     align-items: center;
     padding: 10px 0;
-    cursor: pointer;
     transition: background-color 0.2s;
     border-radius: 4px;
     margin-top: 5px;
-}
-
-.add-option-area:hover {
-    background-color: var(--bg-lighter);
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 .add-option-link {
     color: #5f6368;
     font-size: 0.9rem;
     user-select: none;
+    cursor: pointer;
+    transition: color 0.2s;
 }
 
-.add-option-area:hover .add-option-link {
+.add-option-link:hover {
     color: var(--primary-green);
+}
+
+.add-option-separator {
+    color: #5f6368;
+    font-size: 0.9rem;
+    user-select: none;
+}
+
+.add-option-other {
+    color: #4285f4;
+    font-size: 0.9rem;
+    user-select: none;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.add-option-other:hover {
+    color: #1a73e8;
+    text-decoration: underline;
+}
+
+.option-label {
+    color: #202124;
+    font-size: 0.95rem;
+    margin-right: 8px;
+    user-select: none;
 }
 
 /* Стили для разных типов вопросов */
@@ -1939,4 +2027,153 @@ textarea.input-line {
         flex-direction: column;
         gap: 12px;
     }
+}
+
+/* ====================================
+   ФОРМА ЗАГОЛОВКА С ФИОЛЕТОВОЙ ПОЛОСОЙ
+   ==================================== */
+
+.form-header-block {
+    position: relative;
+}
+
+.form-title-wrapper {
+    position: relative;
+}
+
+.editor-title-input-rich {
+    border: none;
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #202124;
+    padding: 5px 0;
+    width: 100%;
+    outline: none;
+    min-height: 40px;
+    cursor: text;
+}
+
+.editor-title-input-rich:empty:before {
+    content: attr(data-placeholder);
+    color: #9aa0a6;
+    pointer-events: none;
+}
+
+.editor-title-input-rich:focus {
+    outline: none;
+}
+
+.editor-title-input-rich p {
+    margin: 0;
+    padding: 0;
+}
+
+.form-description-wrapper {
+    margin-top: 20px;
+}
+
+.form-description-separator {
+    height: 1px;
+    background-color: #e0e0e0;
+    margin-bottom: 16px;
+}
+
+.form-description-label {
+    display: block;
+    color: #5f6368;
+    font-size: 0.875rem;
+    margin-bottom: 8px;
+}
+
+
+/* Плавающая панель инструментов */
+.floating-toolbar {
+    position: absolute;
+    background: white;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    display: flex;
+    gap: 2px;
+    padding: 4px 8px;
+    z-index: 10000;
+    pointer-events: auto;
+}
+
+.toolbar-btn {
+    background: none;
+    border: none;
+    padding: 6px 10px;
+    cursor: pointer;
+    color: #5f6368;
+    font-size: 0.875rem;
+    border-radius: 3px;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+}
+
+.toolbar-btn:hover {
+    background-color: #f1f3f4;
+}
+
+.toolbar-btn:active {
+    background-color: #e8eaed;
+}
+
+.toolbar-btn i {
+    font-size: 0.875rem;
+}
+
+.rich-text-editor {
+    min-height: 40px;
+    padding: 10px 0;
+    outline: none;
+    color: #202124;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    width: 100%;
+}
+
+.rich-text-editor:empty:before {
+    content: attr(data-placeholder);
+    color: #9aa0a6;
+    pointer-events: none;
+}
+
+.rich-text-editor:focus {
+    outline: none;
+}
+
+/* Стили для элементов внутри редактора */
+.rich-text-editor p {
+    margin: 0;
+    padding: 0;
+}
+
+.rich-text-editor ul,
+.rich-text-editor ol {
+    margin: 8px 0;
+    padding-left: 30px;
+}
+
+.rich-text-editor a {
+    color: #673AB7;
+    text-decoration: underline;
+}
+
+/* Переключатель DOC */
+.doc-toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.doc-toggle-label {
+    font-size: 0.9375rem;
+    color: #4285f4;
+    font-weight: 500;
 }

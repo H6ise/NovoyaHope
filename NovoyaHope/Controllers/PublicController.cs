@@ -29,8 +29,10 @@ namespace NovoyaHope.Controllers
         public async Task<IActionResult> ViewSurvey(int id)
         {
             var survey = await _context.Surveys
-                .Include(s => s.Questions.OrderBy(q => q.Order))
-                    .ThenInclude(q => q.AnswerOptions.OrderBy(o => o.Order))
+                .Include(s => s.Questions)
+                    .ThenInclude(q => q.AnswerOptions)
+                .Include(s => s.Sections)
+                .Include(s => s.Media)
                 .FirstOrDefaultAsync(s => s.Id == id && s.IsPublished);
 
             if (survey == null)
@@ -42,22 +44,43 @@ namespace NovoyaHope.Controllers
             var viewModel = new PassSurveyViewModel
             {
                 Id = survey.Id,
-                Title = survey.Title,
-                Description = survey.Description,
+                Title = survey.Title ?? "",
+                Description = survey.Description ?? "",
                 IsAnonymous = survey.IsAnonymous,
-                Questions = survey.Questions?.OrderBy(q => q.Order).Select(q => new PassQuestionViewModel
-                {
-                    Id = q.Id,
-                    Text = q.Text,
-                    Type = q.Type,
-                    IsRequired = q.IsRequired,
-                    Options = q.AnswerOptions?.OrderBy(o => o.Order).Select(o => new PassAnswerOptionViewModel
+                Questions = (survey.Questions ?? new List<Question>())
+                    .OrderBy(q => q.Order)
+                    .Select(q => new PassQuestionViewModel
                     {
-                        Id = o.Id,
-                        Text = o.Text,
-                        Order = o.Order
-                    }).ToList() ?? new List<PassAnswerOptionViewModel>()
-                }).ToList() ?? new List<PassQuestionViewModel>()
+                        Id = q.Id,
+                        Text = q.Text ?? "",
+                        Type = q.Type,
+                        IsRequired = q.IsRequired,
+                        Order = q.Order,
+                        Options = (q.AnswerOptions ?? new List<AnswerOption>())
+                            .OrderBy(o => o.Order)
+                            .Select(o => new PassAnswerOptionViewModel
+                            {
+                                Id = o.Id,
+                                Text = o.Text ?? "",
+                                Order = o.Order,
+                                IsOther = o.IsOther
+                            }).ToList()
+                    }).ToList(),
+                Sections = (survey.Sections ?? new List<Section>())
+                    .OrderBy(s => s.Order)
+                    .ToList(),
+                Media = (survey.Media ?? new List<Media>())
+                    .OrderBy(m => m.Order)
+                    .ToList(),
+                ThemeColor = survey.ThemeColor,
+                BackgroundColor = survey.BackgroundColor,
+                HeaderImagePath = survey.HeaderImagePath,
+                HeaderFontFamily = survey.HeaderFontFamily,
+                HeaderFontSize = survey.HeaderFontSize,
+                QuestionFontFamily = survey.QuestionFontFamily,
+                QuestionFontSize = survey.QuestionFontSize,
+                TextFontFamily = survey.TextFontFamily,
+                TextFontSize = survey.TextFontSize
             };
 
             return View("Pass", viewModel);
@@ -137,8 +160,8 @@ namespace NovoyaHope.Controllers
             }
 
             // 2. Получение ID пользователя (если не анонимный)
-            string userId = null;
-            if (!survey.IsAnonymous && User.Identity.IsAuthenticated)
+            string? userId = null;
+            if (!survey.IsAnonymous && User.Identity != null && User.Identity.IsAuthenticated)
             {
                 userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             }

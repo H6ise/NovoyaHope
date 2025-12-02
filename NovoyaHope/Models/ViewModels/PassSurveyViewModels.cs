@@ -10,6 +10,8 @@ namespace NovoyaHope.Models.ViewModels
         public string Description { get; set; }
         public bool IsAnonymous { get; set; }
         public List<PassQuestionViewModel> Questions { get; set; }
+        public List<Section> Sections { get; set; } = new List<Section>();
+        public List<Media> Media { get; set; } = new List<Media>();
 
         // Настройки темы
         public string? ThemeColor { get; set; }
@@ -29,6 +31,7 @@ namespace NovoyaHope.Models.ViewModels
         public string Text { get; set; }
         public QuestionType Type { get; set; }
         public bool IsRequired { get; set; }
+        public int Order { get; set; }
         public List<PassAnswerOptionViewModel> Options { get; set; }
     }
 
@@ -37,6 +40,7 @@ namespace NovoyaHope.Models.ViewModels
         public int Id { get; set; }
         public string Text { get; set; }
         public int Order { get; set; }
+        public bool IsOther { get; set; }
     }
 
     // --- Модель для приема ответов ---

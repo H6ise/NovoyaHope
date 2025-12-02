@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NovoyaHope.Models;
 using NovoyaHope.Data;
-using NovoyaHope.Models.ViewModels; // ������������, ��� ErrorViewModel ��������� �����
+using NovoyaHope.Models.ViewModels; 
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;

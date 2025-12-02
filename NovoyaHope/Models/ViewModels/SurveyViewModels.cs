@@ -40,13 +40,13 @@ namespace NovoyaHope.Models.ViewModels
         public int? TextFontSize { get; set; } = 11;
 
         // Список вопросов в текущем опросе
-        public List<SaveQuestionViewModel> Questions { get; set; }
+        public List<SaveQuestionViewModel> Questions { get; set; } = new List<SaveQuestionViewModel>();
         
         // Список разделов в опросе
-        public List<SaveSectionViewModel> Sections { get; set; }
+        public List<SaveSectionViewModel> Sections { get; set; } = new List<SaveSectionViewModel>();
         
         // Список медиа-элементов (изображения и видео)
-        public List<SaveMediaViewModel> Media { get; set; }
+        public List<SaveMediaViewModel> Media { get; set; } = new List<SaveMediaViewModel>();
     }
     
     // ViewModel для раздела
@@ -67,8 +67,7 @@ namespace NovoyaHope.Models.ViewModels
         [Required]
         public int Order { get; set; }
         public MediaType Type { get; set; }
-        [Required(ErrorMessage = "Укажите URL или загрузите файл.")]
-        public string Url { get; set; }
+        public string? Url { get; set; } // Может быть null, если загружается файл
         public string? Title { get; set; }
         public string? Description { get; set; }
         public int? QuestionId { get; set; }

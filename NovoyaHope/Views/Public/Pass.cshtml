@@ -1,8 +1,11 @@
 ﻿@model NovoyaHope.Models.ViewModels.PassSurveyViewModel
 @using NovoyaHope.Models
+@using System
+@using System.Linq
 
 @{
-    ViewData["Title"] = Model.Title;
+    // Удаляем HTML теги из заголовка для использования в title страницы
+    ViewData["Title"] = System.Text.RegularExpressions.Regex.Replace(Model.Title ?? "", "<.*?>", "").Trim();
     Layout = "_Layout";
 }
 
@@ -10,10 +13,10 @@
     <div class="pass-container">
 
         <div class="pass-header-card">
-            <h1 class="survey-title">@Model.Title</h1>
+            <h1 class="survey-title">@Html.Raw(Model.Title ?? "")</h1>
             @if (!string.IsNullOrWhiteSpace(Model.Description))
             {
-                <p class="survey-description">@Model.Description</p>
+                <div class="survey-description">@Html.Raw(Model.Description)</div>
             }
 
             <hr class="header-divider" />
@@ -35,12 +38,136 @@
             @Html.AntiForgeryToken()
             <input type="hidden" name="SurveyId" value="@Model.Id" />
 
-            @foreach (var question in Model.Questions) // Сортировка уже должна быть сделана в контроллере
+            @{
+                // Создаем объединенный список всех элементов с их порядком
+                var allElements = new List<dynamic>();
+                
+                // Добавляем разделы
+                if (Model.Sections != null)
+                {
+                    foreach (var sectionItem in Model.Sections.OrderBy(s => s.Order))
+                    {
+                        allElements.Add(new { Type = "Section", Order = sectionItem.Order, Data = sectionItem });
+                    }
+                }
+                
+                // Добавляем медиа
+                if (Model.Media != null)
+                {
+                    foreach (var mediaItem in Model.Media.OrderBy(m => m.Order))
+                    {
+                        allElements.Add(new { Type = "Media", Order = mediaItem.Order, Data = mediaItem });
+                    }
+                }
+                
+                // Добавляем вопросы
+                if (Model.Questions != null)
+                {
+                    foreach (var question in Model.Questions.OrderBy(q => q.Order))
+                    {
+                        allElements.Add(new { Type = "Question", Order = question.Order, Data = question });
+                    }
+                }
+                
+                // Сортируем по порядку
+                allElements = allElements.OrderBy(e => e.Order).ToList();
+            }
+
+            @foreach (var element in allElements)
             {
+                string elementType = element.Type?.ToString() ?? "";
+                
+                if (elementType == "Section")
+                {
+                    var sectionItem = element.Data as Section;
+                    if (sectionItem != null)
+                    {
+                        <div class="section-card">
+                            <h2 class="section-title">@Html.Raw(sectionItem.Title ?? "(Раздел без названия)")</h2>
+                            @if (!string.IsNullOrWhiteSpace(sectionItem.Description))
+                            {
+                                <div class="section-description">@Html.Raw(sectionItem.Description)</div>
+                            }
+                        </div>
+                    }
+                }
+                else if (elementType == "Media")
+                {
+                    var mediaItem = element.Data as Media;
+                    if (mediaItem != null)
+                    {
+                    <div class="media-card">
+                        @if (!string.IsNullOrWhiteSpace(mediaItem.Title))
+                        {
+                            <h3 class="media-title">@mediaItem.Title</h3>
+                        }
+                        @if (mediaItem.Type == MediaType.Image && !string.IsNullOrWhiteSpace(mediaItem.Url))
+                        {
+                            <div class="media-image-container">
+                                <img src="@mediaItem.Url" alt="@mediaItem.Title" class="media-image" />
+                            </div>
+                        }
+                        else if (mediaItem.Type == MediaType.Video && !string.IsNullOrWhiteSpace(mediaItem.Url))
+                        {
+                            <div class="media-video-container">
+                                @if (mediaItem.Url.Contains("youtube.com") || mediaItem.Url.Contains("youtu.be"))
+                                {
+                                    // Извлекаем ID видео из YouTube URL
+                                    var videoId = "";
+                                    if (mediaItem.Url.Contains("youtube.com/watch?v="))
+                                    {
+                                        videoId = mediaItem.Url.Split(new[] { "v=" }, StringSplitOptions.None)[1].Split('&')[0];
+                                    }
+                                    else if (mediaItem.Url.Contains("youtu.be/"))
+                                    {
+                                        videoId = mediaItem.Url.Split(new[] { "youtu.be/" }, StringSplitOptions.None)[1].Split('?')[0];
+                                    }
+                                    
+                                    if (!string.IsNullOrEmpty(videoId))
+                                    {
+                                        <iframe width="100%" height="400" 
+                                                src="https://www.youtube.com/embed/@videoId" 
+                                                frameborder="0" 
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                                allowfullscreen></iframe>
+                                    }
+                                    else
+                                    {
+                                        <a href="@mediaItem.Url" target="_blank" class="media-link">Открыть видео</a>
+                                    }
+                                }
+                                else
+                                {
+                                    <video controls class="media-video" style="width: 100%; max-height: 400px;">
+                                        <source src="@mediaItem.Url" type="video/mp4">
+                                        Ваш браузер не поддерживает видео.
+                                    </video>
+                                }
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(mediaItem.Description))
+                        {
+                            <p class="media-description">@mediaItem.Description</p>
+                        }
+                    </div>
+                    }
+                }
+                else if (elementType == "Question")
+                {
+                    var question = element.Data as PassQuestionViewModel;
+                    if (question != null)
+                    {
                 <div class="question-card @(question.Type == QuestionType.ShortText || question.Type == QuestionType.ParagraphText ? "" : "choice-card")">
 
                     <div class="question-text">
-                        @question.Text
+                        @if (string.IsNullOrWhiteSpace(question.Text))
+                        {
+                            <span style="color: #999; font-style: italic;">Вопрос без текста</span>
+                        }
+                        else
+                        {
+                            @question.Text
+                        }
                         @if (question.IsRequired)
                         {
                             <span class="req-star">*</span>
@@ -68,28 +195,64 @@
 
                             // --- Одиночный выбор (Radio) ---
                             case QuestionType.SingleChoice:
-                                @foreach (var option in question.Options)
+                                @if (question.Options != null)
                                 {
-                                    <label class="radio-option">
-                                        <input type="radio"
-                                               name="Answers[@question.Id].SelectedOptionIds"
-                                               value="@option.Id"
-                                               @(question.IsRequired ? "required" : "")>
-                                        <span class="option-text">@option.Text</span>
-                                    </label>
+                                    @foreach (var option in question.Options)
+                                    {
+                                        var isOther = option.IsOther;
+                                        <label class="radio-option">
+                                            <input type="radio"
+                                                   name="Answers[@question.Id].SelectedOptionIds"
+                                                   value="@option.Id"
+                                                   class="@(isOther ? "other-radio" : "")"
+                                                   data-other="@isOther.ToString().ToLower()"
+                                                   @(question.IsRequired ? "required" : "")>
+                                            @if (isOther)
+                                            {
+                                                <span class="option-label">Другое:</span>
+                                                <input type="text"
+                                                       name="Answers[@question.Id].OtherText"
+                                                       class="other-text-input"
+                                                       placeholder="Укажите свой вариант"
+                                                       style="border-bottom: 1px dotted #dadce0; padding: 5px 0; font-size: 14px; outline: none; width: 200px; margin-left: 8px;">
+                                            }
+                                            else
+                                            {
+                                                <span class="option-text">@(string.IsNullOrWhiteSpace(option.Text) ? "(Пустой вариант)" : option.Text)</span>
+                                            }
+                                        </label>
+                                    }
                                 }
                                 break;
 
                             // --- Множественный выбор (Checkbox) ---
                             case QuestionType.MultipleChoice:
-                                @foreach (var option in question.Options)
+                                @if (question.Options != null)
                                 {
-                                    <label class="checkbox-option">
-                                        <input type="checkbox"
-                                               name="Answers[@question.Id].SelectedOptionIds"
-                                               value="@option.Id">
-                                        <span class="option-text">@option.Text</span>
-                                    </label>
+                                    @foreach (var option in question.Options)
+                                    {
+                                        var isOther = option.IsOther;
+                                        <label class="checkbox-option">
+                                            <input type="checkbox"
+                                                   name="Answers[@question.Id].SelectedOptionIds"
+                                                   value="@option.Id"
+                                                   class="@(isOther ? "other-checkbox" : "")"
+                                                   data-other="@isOther.ToString().ToLower()">
+                                            @if (isOther)
+                                            {
+                                                <span class="option-label">Другое:</span>
+                                                <input type="text"
+                                                       name="Answers[@question.Id].OtherText"
+                                                       class="other-text-input"
+                                                       placeholder="Укажите свой вариант"
+                                                       style="border-bottom: 1px dotted #dadce0; padding: 5px 0; font-size: 14px; outline: none; width: 200px; margin-left: 8px;">
+                                            }
+                                            else
+                                            {
+                                                <span class="option-text">@(string.IsNullOrWhiteSpace(option.Text) ? "(Пустой вариант)" : option.Text)</span>
+                                            }
+                                        </label>
+                                    }
                                 }
                                 break;
 
@@ -99,9 +262,12 @@
                                         name="Answers[@question.Id].SelectedOptionIds"
                                         @(question.IsRequired ? "required" : "")>
                                     <option value="">Выберите вариант</option>
-                                    @foreach (var option in question.Options)
+                                    @if (question.Options != null)
                                     {
-                                        <option value="@option.Id">@option.Text</option>
+                                        @foreach (var option in question.Options)
+                                        {
+                                            <option value="@option.Id">@(string.IsNullOrWhiteSpace(option.Text) ? "(Пустой вариант)" : option.Text)</option>
+                                        }
                                     }
                                 </select>
                                 break;
@@ -111,7 +277,7 @@
                                 <div class="scale-wrapper">
                                     @for (int i = 1; i <= 5; i++)
                                     {
-                                        var optionId = question.Options.FirstOrDefault(o => o.Order == i)?.Id;
+                                        var optionId = question.Options?.FirstOrDefault(o => o.Order == i)?.Id;
 
                                         <label class="scale-item">
                                             <span>@i</span>
@@ -133,7 +299,7 @@
                                 <div class="rating-wrapper">
                                     @for (int i = 1; i <= 5; i++)
                                     {
-                                        var optionId = question.Options.FirstOrDefault(o => o.Order == i)?.Id;
+                                        var optionId = question.Options?.FirstOrDefault(o => o.Order == i)?.Id;
                                         <label class="star-rating-item">
                                             <input type="radio"
                                                    name="Answers[@question.Id].SelectedOptionIds"
@@ -176,20 +342,45 @@
 
                             // --- Сетка с чекбоксами ---
                             case QuestionType.CheckboxGrid:
-                                <div class="grid-info">
-                                    <small style="color: #5f6368;">Примечание: редактирование сеток пока в разработке</small>
-                                </div>
+                                @if (question.Options != null)
+                                {
+                                    <div class="checkbox-grid">
+                                        @foreach (var option in question.Options.OrderBy(o => o.Order))
+                                        {
+                                            <label class="checkbox-option">
+                                                <input type="checkbox"
+                                                       name="Answers[@question.Id].SelectedOptionIds"
+                                                       value="@option.Id">
+                                                <span class="option-text">@(string.IsNullOrWhiteSpace(option.Text) ? "(Пустой вариант)" : option.Text)</span>
+                                            </label>
+                                        }
+                                    </div>
+                                }
                                 break;
 
                             // --- Сетка с радио-кнопками ---
                             case QuestionType.RadioGrid:
-                                <div class="grid-info">
-                                    <small style="color: #5f6368;">Примечание: редактирование сеток пока в разработке</small>
-                                </div>
+                                @if (question.Options != null)
+                                {
+                                    <div class="radio-grid">
+                                        @foreach (var option in question.Options.OrderBy(o => o.Order))
+                                        {
+                                            <label class="radio-option">
+                                                <input type="radio"
+                                                       name="Answers[@question.Id].SelectedOptionIds"
+                                                       value="@option.Id"
+                                                       @(question.IsRequired ? "required" : "")>
+                                                <span class="option-text">@(string.IsNullOrWhiteSpace(option.Text) ? "(Пустой вариант)" : option.Text)</span>
+                                            </label>
+                                        }
+                                    </div>
+                                }
                                 break;
                         }
                     </div>
                 </div>
+                    }
+                }
             }
 
             <div class="submit-footer">
@@ -200,16 +391,16 @@
     </div>
 
     <div class="footer-branding">
-        Создано с помощью <b>NovoyaHope Forms</b>
+        Создано с помощью <b>Poles Forms</b>
     </div>
 </div>
 
 <style>
     .pass-body {
-        background: linear-gradient(135deg, #f5faf5 0%, #f1f8f4 100%);
+        background: @(Model.BackgroundColor ?? "#F3E5F5");
         min-height: 100vh;
         padding-bottom: 50px;
-        font-family: 'Segoe UI', 'Roboto', sans-serif;
+        font-family: '@(Model.TextFontFamily ?? "Roboto")', sans-serif;
     }
 
     .pass-container {
@@ -229,20 +420,72 @@
 
     /* Шапка */
     .pass-header-card {
-        border-top: 10px solid #2e7d32; /* Зеленый цвет */
+        border-top: 10px solid @(Model.ThemeColor ?? "#673AB7");
+        @if (!string.IsNullOrEmpty(Model.HeaderImagePath))
+        {
+            <text>
+            background-image: url('@Model.HeaderImagePath');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            </text>
+        }
     }
 
     .survey-title {
-        font-size: 24pt;
+        font-size: @(Model.HeaderFontSize ?? 24)pt;
+        font-family: '@(Model.HeaderFontFamily ?? "Courier New")', monospace;
         font-weight: 400;
         margin-bottom: 10px;
         color: #202124;
     }
 
     .survey-description {
-        font-size: 11pt;
+        font-size: @(Model.TextFontSize ?? 11)pt;
+        font-family: '@(Model.TextFontFamily ?? "Roboto")', sans-serif;
         color: #202124;
         margin-bottom: 10px;
+        line-height: 1.6;
+    }
+
+    /* Стили для форматирования в заголовке и описании */
+    .survey-title strong,
+    .survey-description strong {
+        font-weight: 600;
+    }
+
+    .survey-title em,
+    .survey-description em {
+        font-style: italic;
+    }
+
+    .survey-title u,
+    .survey-description u {
+        text-decoration: underline;
+    }
+
+    .survey-title a,
+    .survey-description a {
+        color: @(Model.ThemeColor ?? "#673AB7");
+        text-decoration: underline;
+    }
+
+    .survey-title a:hover,
+    .survey-description a:hover {
+        opacity: 0.8;
+    }
+
+    .survey-title ul,
+    .survey-description ul,
+    .survey-title ol,
+    .survey-description ol {
+        margin: 10px 0;
+        padding-left: 30px;
+    }
+
+    .survey-title li,
+    .survey-description li {
+        margin: 5px 0;
     }
 
     .header-divider {
@@ -262,7 +505,8 @@
 
     /* Вопросы */
     .question-text {
-        font-size: 16px;
+        font-size: @(Model.QuestionFontSize ?? 12)px;
+        font-family: '@(Model.QuestionFontFamily ?? "Roboto")', sans-serif;
         color: #202124;
         margin-bottom: 20px;
         font-weight: 500;
@@ -273,14 +517,14 @@
         width: 100%;
         border: none;
         border-bottom: 1px solid #dadce0;
-        // dotted padding: 5px 0;
+        padding: 5px 0;
         font-size: 14px;
         outline: none;
         transition: border-bottom 0.3s;
     }
 
         .input-line:focus {
-            border-bottom: 2px solid #2e7d32;
+            border-bottom: 2px solid @(Model.ThemeColor ?? "#673AB7");
         }
 
     /* Radio и Checkbox */
@@ -293,7 +537,7 @@
 
         .radio-option input, .checkbox-option input {
             margin-right: 15px;
-            accent-color: #2e7d32;
+            accent-color: @(Model.ThemeColor ?? "#673AB7");
             width: 18px;
             height: 18px;
         }
@@ -340,7 +584,7 @@
     }
 
     .btn-submit {
-        background-color: #2e7d32;
+        background-color: @(Model.ThemeColor ?? "#673AB7");
         color: white;
         border: none;
         border-radius: 8px;
@@ -349,17 +593,17 @@
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s;
-        box-shadow: 0 2px 4px rgba(46, 125, 50, 0.2);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
         .btn-submit:hover {
-            background-color: #1b5e20;
-            box-shadow: 0 4px 8px rgba(46, 125, 50, 0.3);
+            opacity: 0.9;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             transform: translateY(-1px);
         }
 
     .clear-form-link {
-        color: #2e7d32;
+        color: @(Model.ThemeColor ?? "#673AB7");
         font-size: 14px;
         cursor: pointer;
         font-weight: 500;
@@ -367,7 +611,7 @@
     }
 
         .clear-form-link:hover {
-            color: #1b5e20;
+            opacity: 0.8;
         }
 
     .footer-branding {
@@ -392,8 +636,8 @@
 
         .dropdown-select:focus {
             outline: none;
-            border-color: #2e7d32;
-            box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.1);
+            border-color: @(Model.ThemeColor ?? "#673AB7");
+            box-shadow: 0 0 0 2px rgba(103, 58, 183, 0.1);
         }
 
     /* Оценка звездами */
@@ -436,8 +680,8 @@
     }
 
         .date-input:focus, .time-input:focus {
-            border-color: #2e7d32 !important;
-            box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.1);
+            border-color: @(Model.ThemeColor ?? "#673AB7") !important;
+            box-shadow: 0 0 0 2px rgba(103, 58, 183, 0.1);
         }
 
     /* Загрузка файлов */
@@ -465,7 +709,7 @@
     }
 
         .file-label:hover {
-            border-color: #2e7d32;
+            border-color: @(Model.ThemeColor ?? "#673AB7");
             background-color: #f5faf5;
         }
 
@@ -481,11 +725,161 @@
 
         .file-label:hover i,
         .file-label:hover span {
-            color: #2e7d32;
+            color: @(Model.ThemeColor ?? "#673AB7");
         }
 
+    /* Разделы */
+    .section-card {
+        background: white;
+        border: 1px solid #dadce0;
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 12px;
+        border-left: 4px solid @(Model.ThemeColor ?? "#673AB7");
+    }
+
+    .section-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #202124;
+        margin-bottom: 10px;
+    }
+
+    .section-description {
+        font-size: 14px;
+        color: #5f6368;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    /* Стили для форматирования в разделах */
+    .section-title strong,
+    .section-description strong {
+        font-weight: 600;
+    }
+
+    .section-title em,
+    .section-description em {
+        font-style: italic;
+    }
+
+    .section-title u,
+    .section-description u {
+        text-decoration: underline;
+    }
+
+    .section-title a,
+    .section-description a {
+        color: @(Model.ThemeColor ?? "#673AB7");
+        text-decoration: underline;
+    }
+
+    .section-title ul,
+    .section-description ul,
+    .section-title ol,
+    .section-description ol {
+        margin: 10px 0;
+        padding-left: 30px;
+    }
+
+    .section-title li,
+    .section-description li {
+        margin: 5px 0;
+    }
+
+    /* Медиа */
+    .media-card {
+        background: white;
+        border: 1px solid #dadce0;
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 12px;
+    }
+
+    .media-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #202124;
+        margin-bottom: 15px;
+    }
+
+    .media-image-container {
+        margin: 15px 0;
+        text-align: center;
+    }
+
+    .media-image {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .media-video-container {
+        margin: 15px 0;
+        position: relative;
+        padding-bottom: 56.25%; /* 16:9 aspect ratio */
+        height: 0;
+        overflow: hidden;
+    }
+
+    .media-video-container iframe,
+    .media-video-container video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 8px;
+    }
+
+    .media-video {
+        width: 100%;
+        max-height: 400px;
+        border-radius: 8px;
+    }
+
+    .media-link {
+        display: inline-block;
+        padding: 12px 24px;
+        background-color: @(Model.ThemeColor ?? "#673AB7");
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: background-color 0.2s;
+    }
+
+    .media-link:hover {
+        opacity: 0.9;
+    }
+
+    .media-description {
+        font-size: 14px;
+        color: #5f6368;
+        line-height: 1.6;
+        margin-top: 15px;
+        margin-bottom: 0;
+    }
+
+    /* Пустые варианты ответов */
+    .empty-options-message {
+        padding: 15px;
+        background-color: #f5f5f5;
+        border-radius: 4px;
+        text-align: center;
+        margin: 10px 0;
+    }
+
+    /* Сетки */
+    .checkbox-grid, .radio-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
     /* Анимации */
-    .question-card {
+    .question-card, .section-card, .media-card {
         animation: slideInUp 0.3s ease-out;
     }
 
@@ -500,4 +894,75 @@
             transform: translateY(0);
         }
     }
+
+    /* Вариант "Другое" */
+    .option-label {
+        color: #202124;
+        font-size: 14px;
+        margin-right: 8px;
+    }
+
+    .other-text-input {
+        transition: border-bottom 0.3s;
+    }
+
+    .other-text-input:focus {
+        border-bottom: 2px solid @(Model.ThemeColor ?? "#673AB7") !important;
+    }
+
+    .other-radio:not(:checked) ~ .other-text-input,
+    .other-checkbox:not(:checked) ~ .other-text-input {
+        opacity: 0.5;
+        pointer-events: none;
+    }
 </style>
+
+<script>
+    // Обработка варианта "Другое"
+    document.addEventListener('DOMContentLoaded', function() {
+        // Для радио-кнопок
+        document.querySelectorAll('.other-radio').forEach(function(radio) {
+            radio.addEventListener('change', function() {
+                const textInput = this.parentElement.querySelector('.other-text-input');
+                if (textInput) {
+                    if (this.checked) {
+                        textInput.style.opacity = '1';
+                        textInput.style.pointerEvents = 'auto';
+                        textInput.focus();
+                    } else {
+                        textInput.style.opacity = '0.5';
+                        textInput.style.pointerEvents = 'none';
+                        textInput.value = '';
+                    }
+                }
+            });
+        });
+
+        // Для чекбоксов
+        document.querySelectorAll('.other-checkbox').forEach(function(checkbox) {
+            checkbox.addEventListener('change', function() {
+                const textInput = this.parentElement.querySelector('.other-text-input');
+                if (textInput) {
+                    if (this.checked) {
+                        textInput.style.opacity = '1';
+                        textInput.style.pointerEvents = 'auto';
+                        textInput.focus();
+                    } else {
+                        textInput.style.opacity = '0.5';
+                        textInput.style.pointerEvents = 'none';
+                        textInput.value = '';
+                    }
+                }
+            });
+        });
+
+        // Инициализация состояния при загрузке
+        document.querySelectorAll('.other-radio:checked, .other-checkbox:checked').forEach(function(input) {
+            const textInput = input.parentElement.querySelector('.other-text-input');
+            if (textInput) {
+                textInput.style.opacity = '1';
+                textInput.style.pointerEvents = 'auto';
+            }
+        });
+    });
+</script>

@@ -157,10 +157,10 @@ namespace NovoyaHope.Controllers
             }
 
             // Здесь необходим маппинг Survey -> ViewModel для конструктора
-            var viewModel = new NovoyaHope.Models.ViewModels.SurveyConstructorViewModel
+            var viewModel = new SurveyConstructorViewModel
             {
                 Survey = survey,
-                Questions = survey.Questions?.OrderBy(q => q.Order).ToList() ?? new System.Collections.Generic.List<NovoyaHope.Models.Question>(),
+                Questions = survey.Questions?.OrderBy(q => q.Order).ToList() ?? new System.Collections.Generic.List<Question>(),
                 Sections = survey.Sections?.OrderBy(s => s.Order).ToList() ?? new System.Collections.Generic.List<Section>(),
                 Media = survey.Media?.OrderBy(m => m.Order).ToList() ?? new System.Collections.Generic.List<Media>(),
                 ResultsData = resultsData
@@ -178,6 +178,8 @@ namespace NovoyaHope.Controllers
             var survey = await _context.Surveys
                 .Include(s => s.Questions.OrderBy(q => q.Order))
                     .ThenInclude(q => q.AnswerOptions.OrderBy(o => o.Order))
+                .Include(s => s.Sections.OrderBy(s => s.Order))
+                .Include(s => s.Media.OrderBy(m => m.Order))
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (survey == null || survey.CreatorId != userId)
@@ -205,6 +207,8 @@ namespace NovoyaHope.Controllers
                         Order = o.Order
                     }).ToList() ?? new List<PassAnswerOptionViewModel>()
                 }).ToList() ?? new List<PassQuestionViewModel>(),
+                Sections = survey.Sections?.OrderBy(s => s.Order).ToList() ?? new List<Section>(),
+                Media = survey.Media?.OrderBy(m => m.Order).ToList() ?? new List<Media>(),
                 // Передаем настройки темы
                 ThemeColor = survey.ThemeColor,
                 BackgroundColor = survey.BackgroundColor,
@@ -234,7 +238,7 @@ namespace NovoyaHope.Controllers
             }
 
             // Обработка загруженных файлов для медиа-изображений
-            if (Request.Form.Files != null && Request.Form.Files.Count > 0)
+            if (Request.Form.Files != null && Request.Form.Files.Count > 0 && model.Media != null && model.Media.Count > 0)
             {
                 var webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
                 var tempSurveyId = model.Id ?? 0;
@@ -246,26 +250,28 @@ namespace NovoyaHope.Controllers
                 }
 
                 // Обрабатываем загруженные файлы для медиа
-                if (model.Media != null)
+                for (int i = 0; i < model.Media.Count; i++)
                 {
-                    for (int i = 0; i < model.Media.Count; i++)
+                    var media = model.Media[i];
+                    var fileKey = $"Media[{i}].File";
+                    var file = Request.Form.Files[fileKey];
+                    
+                    if (file != null && file.Length > 0)
                     {
-                        var media = model.Media[i];
-                        var fileKey = $"Media[{i}].File";
-                        var file = Request.Form.Files[fileKey];
-                        
-                        if (file != null && file.Length > 0)
+                        try
                         {
-                            try
-                            {
-                                var imageUrl = await ImageHelper.SaveMediaImageAsync(file, tempSurveyId, webRootPath);
-                                media.Url = imageUrl;
-                            }
-                            catch (ArgumentException ex)
-                            {
-                                ModelState.AddModelError($"Media[{i}].File", ex.Message);
-                            }
+                            var imageUrl = await ImageHelper.SaveMediaImageAsync(file, tempSurveyId, webRootPath);
+                            media.Url = imageUrl;
                         }
+                        catch (ArgumentException ex)
+                        {
+                            ModelState.AddModelError($"Media[{i}].File", ex.Message);
+                        }
+                    }
+                    // Валидация: для изображений должен быть либо URL, либо загруженный файл
+                    else if (media.Type == MediaType.Image && string.IsNullOrWhiteSpace(media.Url))
+                    {
+                        ModelState.AddModelError($"Media[{i}].Url", "Для изображения необходимо указать URL или загрузить файл.");
                     }
                 }
             }
@@ -355,7 +361,7 @@ namespace NovoyaHope.Controllers
                 var surveyId = await _surveyService.SaveSurveyAsync(model, userId);
                 return Ok(new { Success = true, SurveyId = surveyId, Message = "Сохранено" });
             }
-            catch (UnauthorizedAccessException ex)
+            catch (UnauthorizedAccessException)
             {
                 return Forbid();
             }
@@ -564,6 +570,139 @@ namespace NovoyaHope.Controllers
                 TempData["ErrorMessage"] = "Ошибка при удалении опроса. Попробуйте еще раз.";
                 return RedirectToAction(nameof(Index));
             }
+        }
+
+        // --- ЭКСПОРТ РЕЗУЛЬТАТОВ ---
+
+        // GET /survey/export/{id}
+        public async Task<IActionResult> ExportResults(int id, string format = "csv")
+        {
+            var userId = _userManager.GetUserId(User);
+            var survey = await _context.Surveys
+                .Include(s => s.Questions.OrderBy(q => q.Order))
+                    .ThenInclude(q => q.AnswerOptions.OrderBy(o => o.Order))
+                .Include(s => s.Responses)
+                    .ThenInclude(r => r.User)
+                .Include(s => s.Responses)
+                    .ThenInclude(r => r.UserAnswers)
+                        .ThenInclude(ua => ua.SelectedOption)
+                .FirstOrDefaultAsync(s => s.Id == id && s.CreatorId == userId);
+
+            if (survey == null)
+            {
+                return NotFound();
+            }
+
+            if (format.ToLower() == "csv")
+            {
+                return await ExportToCsv(survey);
+            }
+
+            return BadRequest("Неподдерживаемый формат экспорта. Используйте 'csv'.");
+        }
+
+        private async Task<IActionResult> ExportToCsv(Survey survey)
+        {
+            var responses = survey.Responses?.OrderBy(r => r.SubmissionDate).ToList() ?? new List<SurveyResponse>();
+            var questions = survey.Questions?.OrderBy(q => q.Order).ToList() ?? new List<Question>();
+
+            using (var memoryStream = new MemoryStream())
+            using (var writer = new StreamWriter(memoryStream, System.Text.Encoding.UTF8))
+            {
+                // Заголовок CSV
+                var headers = new List<string> { "ID ответа", "Дата отправки", "Email пользователя" };
+                headers.AddRange(questions.Select(q => EscapeCsvField(q.Text)));
+                writer.WriteLine(string.Join(",", headers));
+
+                // Данные по каждому ответу
+                foreach (var response in responses)
+                {
+                    var row = new List<string>
+                    {
+                        response.Id.ToString(),
+                        response.SubmissionDate.ToString("yyyy-MM-dd HH:mm:ss"),
+                        survey.IsAnonymous || response.User == null ? "Анонимно" : (response.User.Email ?? "Не указан")
+                    };
+
+                    // Для каждого вопроса находим ответ
+                    foreach (var question in questions)
+                    {
+                        var answers = response.UserAnswers?
+                            .Where(ua => ua.QuestionId == question.Id)
+                            .ToList() ?? new List<UserAnswer>();
+
+                        string answerText = "";
+
+                        if (answers.Any())
+                        {
+                            if (question.Type == QuestionType.ShortText || question.Type == QuestionType.ParagraphText)
+                            {
+                                // Для текстовых вопросов берем первый ответ
+                                answerText = answers.First().TextAnswer ?? "";
+                            }
+                            else if (question.Type == QuestionType.MultipleChoice)
+                            {
+                                // Для множественного выбора объединяем все выбранные варианты
+                                var selectedOptions = answers
+                                    .Where(a => a.SelectedOptionId.HasValue)
+                                    .Select(a => question.AnswerOptions?
+                                        .FirstOrDefault(o => o.Id == a.SelectedOptionId.Value)?.Text)
+                                    .Where(text => !string.IsNullOrEmpty(text))
+                                    .ToList();
+                                
+                                answerText = string.Join("; ", selectedOptions);
+                            }
+                            else if (answers.First().SelectedOptionId.HasValue)
+                            {
+                                // Для одиночного выбора берем первый ответ
+                                var option = question.AnswerOptions?
+                                    .FirstOrDefault(o => o.Id == answers.First().SelectedOptionId.Value);
+                                answerText = option?.Text ?? "";
+                            }
+                        }
+
+                        row.Add(EscapeCsvField(answerText));
+                    }
+
+                    writer.WriteLine(string.Join(",", row));
+                }
+
+                await writer.FlushAsync();
+                memoryStream.Position = 0;
+
+                var fileName = $"Результаты_{EscapeFileName(survey.Title)}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+                return File(memoryStream.ToArray(), "text/csv; charset=utf-8", fileName);
+            }
+        }
+
+        private string EscapeCsvField(string field)
+        {
+            if (string.IsNullOrEmpty(field))
+                return "";
+
+            // Если поле содержит запятую, кавычки или перенос строки, заключаем в кавычки
+            if (field.Contains(",") || field.Contains("\"") || field.Contains("\n") || field.Contains("\r"))
+            {
+                // Экранируем кавычки удвоением
+                field = field.Replace("\"", "\"\"");
+                return $"\"{field}\"";
+            }
+
+            return field;
+        }
+
+        private string EscapeFileName(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName))
+                return "survey";
+
+            var invalidChars = Path.GetInvalidFileNameChars();
+            foreach (var c in invalidChars)
+            {
+                fileName = fileName.Replace(c, '_');
+            }
+
+            return fileName;
         }
 
         // --- ШАБЛОНЫ ---

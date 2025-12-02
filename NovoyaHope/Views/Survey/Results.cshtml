@@ -9,18 +9,32 @@
 
 <div class="container mt-4">
     <div class="results-header" style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(46, 125, 50, 0.1); margin-bottom: 30px; border-top: 4px solid #2e7d32;">
-        <h1 style="color: #2e7d32; margin-bottom: 10px; font-weight: 600;">@Model.SurveyTitle</h1>
-        <div style="display: flex; gap: 30px; color: #5f6368; margin-top: 15px;">
-            <div>
-                <strong style="color: #2e7d32;">@Model.TotalResponses</strong> ответов
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <h1 style="color: #2e7d32; margin-bottom: 10px; font-weight: 600;">@Model.SurveyTitle</h1>
+                <div style="display: flex; gap: 30px; color: #5f6368; margin-top: 15px;">
+                    <div>
+                        <strong style="color: #2e7d32;">@Model.TotalResponses</strong> ответов
+                    </div>
+                    <div>
+                        Создано: @Model.CreationDate.ToString("dd.MM.yyyy")
+                    </div>
+                    <div>
+                        <a asp-controller="Public" asp-action="ViewSurvey" asp-route-id="@Model.SurveyId" target="_blank" 
+                           style="color: #2e7d32; text-decoration: underline;">🔗 Открыть опрос</a>
+                    </div>
+                </div>
             </div>
-            <div>
-                Создано: @Model.CreationDate.ToString("dd.MM.yyyy")
-            </div>
-            <div>
-                <a asp-controller="Public" asp-action="ViewSurvey" asp-route-id="@Model.SurveyId" target="_blank" 
-                   style="color: #2e7d32; text-decoration: underline;">🔗 Открыть опрос</a>
-            </div>
+            @if (Model.TotalResponses > 0)
+            {
+                <div>
+                    <a asp-action="ExportResults" asp-route-id="@Model.SurveyId" asp-route-format="csv" 
+                       class="export-btn" 
+                       style="background: #2e7d32; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; border: none; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(46, 125, 50, 0.2);">
+                        📥 Экспорт в CSV
+                    </a>
+                </div>
+            }
         </div>
     </div>
 
@@ -130,6 +144,17 @@
     .question-result-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15) !important;
+    }
+    
+    .export-btn:hover {
+        background: #1b5e20 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(46, 125, 50, 0.3) !important;
+    }
+    
+    .export-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 3px rgba(46, 125, 50, 0.2) !important;
     }
 </style>
 
