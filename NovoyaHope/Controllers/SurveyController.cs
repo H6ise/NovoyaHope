@@ -53,11 +53,17 @@ namespace NovoyaHope.Controllers
             // 1. Если id == null, создаем пустой опрос и перенаправляем на него.
             if (id == null)
             {
+                var userId = _userManager.GetUserId(User);
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized();
+                }
+
                 var newSurvey = new Survey
                 {
                     Title = "Новая форма",
                     Description = string.Empty,
-                    CreatorId = _userManager.GetUserId(User),
+                    CreatorId = userId,
                     CreatedDate = DateTime.UtcNow,
                     IsPublished = false
                 };
@@ -68,12 +74,12 @@ namespace NovoyaHope.Controllers
 
             // 2. Загрузка существующего опроса и проверка прав
             var survey = await _context.Surveys
-                .Include(s => s.Questions)
-                    .ThenInclude(q => q.AnswerOptions)
+                .Include(s => s.Questions!)
+                    .ThenInclude(q => q.AnswerOptions!)
                 .Include(s => s.Sections)
                 .Include(s => s.Media)
-                .Include(s => s.Responses)
-                    .ThenInclude(r => r.UserAnswers)
+                .Include(s => s.Responses!)
+                    .ThenInclude(r => r.UserAnswers!)
                         .ThenInclude(ua => ua.SelectedOption)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
@@ -96,7 +102,8 @@ namespace NovoyaHope.Controllers
                 };
 
                 // Обработка результатов по каждому вопросу
-                foreach (var question in (survey.Questions?.OrderBy(q => q.Order).ToList() ?? new List<Question>()))
+                var questionsList = survey.Questions?.OrderBy(q => q.Order).ToList() ?? new List<Question>();
+                foreach (var question in questionsList)
                 {
                     var questionResult = new QuestionResultViewModel
                     {
@@ -119,7 +126,7 @@ namespace NovoyaHope.Controllers
                     {
                         questionResult.TextAnswers = answersForQuestion
                             .Where(a => !string.IsNullOrWhiteSpace(a.TextAnswer))
-                            .Select(a => a.TextAnswer)
+                            .Select(a => a.TextAnswer!)
                             .ToList();
                     }
                     else if (question.Type == QuestionType.SingleChoice || question.Type == QuestionType.MultipleChoice)
@@ -157,12 +164,16 @@ namespace NovoyaHope.Controllers
             }
 
             // Здесь необходим маппинг Survey -> ViewModel для конструктора
+            var orderedQuestions = survey.Questions?.OrderBy(q => q.Order).ToList() ?? new System.Collections.Generic.List<Question>();
+            var orderedSections = survey.Sections?.OrderBy(s => s.Order).ToList() ?? new System.Collections.Generic.List<Section>();
+            var orderedMedia = survey.Media?.OrderBy(m => m.Order).ToList() ?? new System.Collections.Generic.List<Media>();
+            
             var viewModel = new SurveyConstructorViewModel
             {
                 Survey = survey,
-                Questions = survey.Questions?.OrderBy(q => q.Order).ToList() ?? new System.Collections.Generic.List<Question>(),
-                Sections = survey.Sections?.OrderBy(s => s.Order).ToList() ?? new System.Collections.Generic.List<Section>(),
-                Media = survey.Media?.OrderBy(m => m.Order).ToList() ?? new System.Collections.Generic.List<Media>(),
+                Questions = orderedQuestions,
+                Sections = orderedSections,
+                Media = orderedMedia,
                 ResultsData = resultsData
             };
 
@@ -176,10 +187,10 @@ namespace NovoyaHope.Controllers
         {
             var userId = _userManager.GetUserId(User);
             var survey = await _context.Surveys
-                .Include(s => s.Questions.OrderBy(q => q.Order))
-                    .ThenInclude(q => q.AnswerOptions.OrderBy(o => o.Order))
-                .Include(s => s.Sections.OrderBy(s => s.Order))
-                .Include(s => s.Media.OrderBy(m => m.Order))
+                .Include(s => s.Questions!)
+                    .ThenInclude(q => q.AnswerOptions!)
+                .Include(s => s.Sections)
+                .Include(s => s.Media)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (survey == null || survey.CreatorId != userId)
@@ -194,7 +205,7 @@ namespace NovoyaHope.Controllers
                 Title = survey.Title,
                 Description = survey.Description,
                 IsAnonymous = survey.IsAnonymous,
-                Questions = survey.Questions?.OrderBy(q => q.Order).Select(q => new PassQuestionViewModel
+                Questions = (survey.Questions?.OrderBy(q => q.Order).Select(q => new PassQuestionViewModel
                 {
                     Id = q.Id,
                     Text = q.Text,
@@ -206,9 +217,9 @@ namespace NovoyaHope.Controllers
                         Text = o.Text,
                         Order = o.Order
                     }).ToList() ?? new List<PassAnswerOptionViewModel>()
-                }).ToList() ?? new List<PassQuestionViewModel>(),
-                Sections = survey.Sections?.OrderBy(s => s.Order).ToList() ?? new List<Section>(),
-                Media = survey.Media?.OrderBy(m => m.Order).ToList() ?? new List<Media>(),
+                }).ToList() ?? new List<PassQuestionViewModel>())!,
+                Sections = (survey.Sections?.OrderBy(s => s.Order).ToList() ?? new List<Section>())!,
+                Media = (survey.Media?.OrderBy(m => m.Order).ToList() ?? new List<Media>())!,
                 // Передаем настройки темы
                 ThemeColor = survey.ThemeColor,
                 BackgroundColor = survey.BackgroundColor,
@@ -418,10 +429,10 @@ namespace NovoyaHope.Controllers
         {
             var userId = _userManager.GetUserId(User);
             var survey = await _context.Surveys
-                .Include(s => s.Questions.OrderBy(q => q.Order))
-                    .ThenInclude(q => q.AnswerOptions.OrderBy(o => o.Order))
-                .Include(s => s.Responses)
-                    .ThenInclude(r => r.UserAnswers)
+                .Include(s => s.Questions!)
+                    .ThenInclude(q => q.AnswerOptions!)
+                .Include(s => s.Responses!)
+                    .ThenInclude(r => r.UserAnswers!)
                         .ThenInclude(ua => ua.SelectedOption)
                 .FirstOrDefaultAsync(s => s.Id == id && s.CreatorId == userId);
 
@@ -464,7 +475,7 @@ namespace NovoyaHope.Controllers
                     // Текстовые ответы
                     questionResult.TextAnswers = answersForQuestion
                         .Where(a => !string.IsNullOrWhiteSpace(a.TextAnswer))
-                        .Select(a => a.TextAnswer)
+                        .Select(a => a.TextAnswer!)
                         .ToList();
                 }
                 else if (question.Type == QuestionType.SingleChoice || question.Type == QuestionType.MultipleChoice)
@@ -533,10 +544,10 @@ namespace NovoyaHope.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var survey = await _context.Surveys
-                .Include(s => s.Questions)
-                    .ThenInclude(q => q.AnswerOptions)
-                .Include(s => s.Responses)
-                    .ThenInclude(r => r.UserAnswers)
+                .Include(s => s.Questions!)
+                    .ThenInclude(q => q.AnswerOptions!)
+                .Include(s => s.Responses!)
+                    .ThenInclude(r => r.UserAnswers!)
                 .FirstOrDefaultAsync(s => s.Id == id);
             
             var userId = _userManager.GetUserId(User);
@@ -579,12 +590,12 @@ namespace NovoyaHope.Controllers
         {
             var userId = _userManager.GetUserId(User);
             var survey = await _context.Surveys
-                .Include(s => s.Questions.OrderBy(q => q.Order))
-                    .ThenInclude(q => q.AnswerOptions.OrderBy(o => o.Order))
-                .Include(s => s.Responses)
+                .Include(s => s.Questions!)
+                    .ThenInclude(q => q.AnswerOptions!)
+                .Include(s => s.Responses!)
                     .ThenInclude(r => r.User)
-                .Include(s => s.Responses)
-                    .ThenInclude(r => r.UserAnswers)
+                .Include(s => s.Responses!)
+                    .ThenInclude(r => r.UserAnswers!)
                         .ThenInclude(ua => ua.SelectedOption)
                 .FirstOrDefaultAsync(s => s.Id == id && s.CreatorId == userId);
 
@@ -646,8 +657,9 @@ namespace NovoyaHope.Controllers
                                 var selectedOptions = answers
                                     .Where(a => a.SelectedOptionId.HasValue)
                                     .Select(a => question.AnswerOptions?
-                                        .FirstOrDefault(o => o.Id == a.SelectedOptionId.Value)?.Text)
+                                        .FirstOrDefault(o => o.Id == a.SelectedOptionId!.Value)?.Text)
                                     .Where(text => !string.IsNullOrEmpty(text))
+                                    .Select(text => text!)
                                     .ToList();
                                 
                                 answerText = string.Join("; ", selectedOptions);
@@ -655,9 +667,14 @@ namespace NovoyaHope.Controllers
                             else if (answers.First().SelectedOptionId.HasValue)
                             {
                                 // Для одиночного выбора берем первый ответ
-                                var option = question.AnswerOptions?
-                                    .FirstOrDefault(o => o.Id == answers.First().SelectedOptionId.Value);
-                                answerText = option?.Text ?? "";
+                                var firstAnswer = answers.First();
+                                if (firstAnswer.SelectedOptionId.HasValue)
+                                {
+                                    var optionId = firstAnswer.SelectedOptionId.Value;
+                                    var option = question.AnswerOptions?
+                                        .FirstOrDefault(o => o.Id == optionId);
+                                    answerText = option?.Text ?? "";
+                                }
                             }
                         }
 

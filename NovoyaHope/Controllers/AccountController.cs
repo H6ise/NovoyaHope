@@ -36,7 +36,7 @@ namespace NovoyaHope.Controllers
         // --- Вход (Login) ---
 
         [HttpGet]
-        public IActionResult Login(string returnUrl = null)
+        public IActionResult Login(string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
             return View();
@@ -44,14 +44,14 @@ namespace NovoyaHope.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = null)
+        public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
             if (ModelState.IsValid)
             {
                 // Поиск пользователя по Email для входа
                 var user = await _userManager.FindByEmailAsync(model.Email);
-                if (user != null)
+                if (user != null && !string.IsNullOrEmpty(user.UserName))
                 {
                     var result = await _signInManager.PasswordSignInAsync(
                         user.UserName, model.Password, model.RememberMe, lockoutOnFailure: false);
@@ -69,7 +69,7 @@ namespace NovoyaHope.Controllers
         // --- Регистрация (Register) ---
 
         [HttpGet]
-        public IActionResult Register(string returnUrl = null)
+        public IActionResult Register(string? returnUrl = null)
         {
             ViewData["IsRegister"] = true;
             ViewData["ReturnUrl"] = returnUrl;
@@ -78,7 +78,7 @@ namespace NovoyaHope.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(RegisterViewModel model, string returnUrl = null)
+        public async Task<IActionResult> Register(RegisterViewModel model, string? returnUrl = null)
         {
             ViewData["IsRegister"] = true;
             ViewData["ReturnUrl"] = returnUrl;
@@ -145,7 +145,7 @@ namespace NovoyaHope.Controllers
             {
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Email = user.Email,
+                Email = user.Email ?? string.Empty,
                 PhoneNumber = user.PhoneNumber,
                 ShowPhoneToPublic = user.ShowPhoneToPublic,
                 ProfileImagePath = user.ProfileImagePath
@@ -288,7 +288,7 @@ namespace NovoyaHope.Controllers
             }
         }
 
-        private IActionResult RedirectToLocal(string returnUrl)
+        private IActionResult RedirectToLocal(string? returnUrl)
         {
             if (Url.IsLocalUrl(returnUrl))
             {
