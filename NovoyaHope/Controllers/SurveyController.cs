@@ -158,6 +158,60 @@ namespace NovoyaHope.Controllers
                                 .Count(a => a.SelectedOptionId == option.Id);
                         }
                     }
+                    else if (question.Type == QuestionType.Rating)
+                    {
+                        var ratingAnswers = answersForQuestion
+                            .Where(a => a.SelectedOptionId.HasValue)
+                            .Select(a => a.SelectedOption?.Order ?? 0)
+                            .Where(order => order > 0)
+                            .ToList();
+
+                        if (ratingAnswers.Any())
+                        {
+                            questionResult.AverageScore = ratingAnswers.Average();
+                        }
+
+                        foreach (var option in question.AnswerOptions ?? new List<AnswerOption>())
+                        {
+                            questionResult.OptionTexts[option.Id] = option.Text;
+                            questionResult.OptionCounts[option.Id] = answersForQuestion
+                                .Count(a => a.SelectedOptionId == option.Id);
+                        }
+                    }
+                    else if (question.Type == QuestionType.Dropdown)
+                    {
+                        foreach (var option in question.AnswerOptions ?? new List<AnswerOption>())
+                        {
+                            questionResult.OptionTexts[option.Id] = option.Text;
+                            questionResult.OptionCounts[option.Id] = answersForQuestion
+                                .Count(a => a.SelectedOptionId == option.Id);
+                        }
+                    }
+                    else if (question.Type == QuestionType.CheckboxGrid)
+                    {
+                        foreach (var option in question.AnswerOptions ?? new List<AnswerOption>())
+                        {
+                            questionResult.OptionTexts[option.Id] = option.Text;
+                            questionResult.OptionCounts[option.Id] = answersForQuestion
+                                .Count(a => a.SelectedOptionId == option.Id);
+                        }
+                    }
+                    else if (question.Type == QuestionType.RadioGrid)
+                    {
+                        foreach (var option in question.AnswerOptions ?? new List<AnswerOption>())
+                        {
+                            questionResult.OptionTexts[option.Id] = option.Text;
+                            questionResult.OptionCounts[option.Id] = answersForQuestion
+                                .Count(a => a.SelectedOptionId == option.Id);
+                        }
+                    }
+                    else if (question.Type == QuestionType.Date || question.Type == QuestionType.Time || question.Type == QuestionType.FileUpload)
+                    {
+                        questionResult.TextAnswers = answersForQuestion
+                            .Where(a => !string.IsNullOrWhiteSpace(a.TextAnswer))
+                            .Select(a => a.TextAnswer!)
+                            .ToList();
+                    }
 
                     resultsData.QuestionResults.Add(questionResult);
                 }
@@ -531,6 +585,60 @@ namespace NovoyaHope.Controllers
                         questionResult.OptionCounts[option.Id] = answersForQuestion
                             .Count(a => a.SelectedOptionId == option.Id);
                     }
+                }
+                else if (question.Type == QuestionType.Dropdown)
+                {
+                    // Раскрывающийся список - аналогично SingleChoice
+                    foreach (var option in question.AnswerOptions ?? new List<AnswerOption>())
+                    {
+                        questionResult.OptionTexts[option.Id] = option.Text;
+                        questionResult.OptionCounts[option.Id] = answersForQuestion
+                            .Count(a => a.SelectedOptionId == option.Id);
+                    }
+                }
+                else if (question.Type == QuestionType.CheckboxGrid)
+                {
+                    // Сетка флажков - аналогично MultipleChoice
+                    foreach (var option in question.AnswerOptions ?? new List<AnswerOption>())
+                    {
+                        questionResult.OptionTexts[option.Id] = option.Text;
+                        questionResult.OptionCounts[option.Id] = answersForQuestion
+                            .Count(a => a.SelectedOptionId == option.Id);
+                    }
+                }
+                else if (question.Type == QuestionType.RadioGrid)
+                {
+                    // Сетка радио-кнопок - аналогично SingleChoice
+                    foreach (var option in question.AnswerOptions ?? new List<AnswerOption>())
+                    {
+                        questionResult.OptionTexts[option.Id] = option.Text;
+                        questionResult.OptionCounts[option.Id] = answersForQuestion
+                            .Count(a => a.SelectedOptionId == option.Id);
+                    }
+                }
+                else if (question.Type == QuestionType.Date)
+                {
+                    // Дата - текстовые ответы с датами
+                    questionResult.TextAnswers = answersForQuestion
+                        .Where(a => !string.IsNullOrWhiteSpace(a.TextAnswer))
+                        .Select(a => a.TextAnswer!)
+                        .ToList();
+                }
+                else if (question.Type == QuestionType.Time)
+                {
+                    // Время - текстовые ответы со временем
+                    questionResult.TextAnswers = answersForQuestion
+                        .Where(a => !string.IsNullOrWhiteSpace(a.TextAnswer))
+                        .Select(a => a.TextAnswer!)
+                        .ToList();
+                }
+                else if (question.Type == QuestionType.FileUpload)
+                {
+                    // Загрузка файлов - текстовые ответы с путями к файлам
+                    questionResult.TextAnswers = answersForQuestion
+                        .Where(a => !string.IsNullOrWhiteSpace(a.TextAnswer))
+                        .Select(a => a.TextAnswer!)
+                        .ToList();
                 }
 
                 viewModel.QuestionResults.Add(questionResult);

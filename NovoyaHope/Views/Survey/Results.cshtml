@@ -77,7 +77,9 @@
                         }
                     </div>
                 }
-                else if (questionResult.Type == QuestionType.SingleChoice || questionResult.Type == QuestionType.MultipleChoice)
+                else if (questionResult.Type == QuestionType.SingleChoice || questionResult.Type == QuestionType.MultipleChoice || 
+                         questionResult.Type == QuestionType.Dropdown || questionResult.Type == QuestionType.CheckboxGrid || 
+                         questionResult.Type == QuestionType.RadioGrid)
                 {
                     <!-- Ответы с выбором вариантов -->
                     <div class="choice-results">
@@ -86,15 +88,16 @@
                             var totalVotes = questionResult.OptionCounts.Values.Sum();
                             var labels = questionResult.OptionTexts.Select(o => o.Value).ToList();
                             var values = questionResult.OptionTexts.Select(o => questionResult.OptionCounts.ContainsKey(o.Key) ? questionResult.OptionCounts[o.Key] : 0).ToList();
-                            var chartType = questionResult.Type == QuestionType.SingleChoice ? "pie" : "bar";
+                            var chartType = (questionResult.Type == QuestionType.SingleChoice || questionResult.Type == QuestionType.Dropdown || questionResult.Type == QuestionType.RadioGrid) ? "pie" : "bar";
                             
                             <!-- График -->
-                            <div class="chart-container" style="margin-bottom: 30px; position: relative; height: 400px;">
+                            <div class="chart-container" style="margin-bottom: 30px; position: relative; height: 400px; width: 100%;">
                                 <div data-chart-type="@chartType" 
                                      data-question-id="@questionResult.QuestionId"
                                      data-labels='@Html.Raw(JsonSerializer.Serialize(labels))'
-                                     data-values='@Html.Raw(JsonSerializer.Serialize(values))'>
-                                    <canvas id="chart-@questionResult.QuestionId"></canvas>
+                                     data-values='@Html.Raw(JsonSerializer.Serialize(values))'
+                                     style="position: relative; height: 100%; width: 100%;">
+                                    <canvas id="chart-@questionResult.QuestionId" style="max-width: 100%; height: 100%;"></canvas>
                                 </div>
                             </div>
                             
@@ -134,12 +137,13 @@
                             var totalVotes = questionResult.OptionCounts.Values.Sum();
                             
                             <!-- График -->
-                            <div class="chart-container" style="margin-bottom: 30px; position: relative; height: 400px;">
+                            <div class="chart-container" style="margin-bottom: 30px; position: relative; height: 400px; width: 100%;">
                                 <div data-chart-type="line" 
                                      data-question-id="@questionResult.QuestionId"
                                      data-labels='@Html.Raw(JsonSerializer.Serialize(labels))'
-                                     data-values='@Html.Raw(JsonSerializer.Serialize(values))'>
-                                    <canvas id="chart-@questionResult.QuestionId"></canvas>
+                                     data-values='@Html.Raw(JsonSerializer.Serialize(values))'
+                                     style="position: relative; height: 100%; width: 100%;">
+                                    <canvas id="chart-@questionResult.QuestionId" style="max-width: 100%; height: 100%;"></canvas>
                                 </div>
                             </div>
                             
@@ -179,12 +183,13 @@
                             var totalVotes = questionResult.OptionCounts.Values.Sum();
                             
                             <!-- График -->
-                            <div class="chart-container" style="margin-bottom: 30px; position: relative; height: 400px;">
+                            <div class="chart-container" style="margin-bottom: 30px; position: relative; height: 400px; width: 100%;">
                                 <div data-chart-type="bar-rating" 
                                      data-question-id="@questionResult.QuestionId"
                                      data-labels='@Html.Raw(JsonSerializer.Serialize(labels))'
-                                     data-values='@Html.Raw(JsonSerializer.Serialize(values))'>
-                                    <canvas id="chart-@questionResult.QuestionId"></canvas>
+                                     data-values='@Html.Raw(JsonSerializer.Serialize(values))'
+                                     style="position: relative; height: 100%; width: 100%;">
+                                    <canvas id="chart-@questionResult.QuestionId" style="max-width: 100%; height: 100%;"></canvas>
                                 </div>
                             </div>
                             
@@ -204,6 +209,51 @@
                                     </div>
                                 </div>
                             }
+                        }
+                    </div>
+                }
+                else if (questionResult.Type == QuestionType.Date || questionResult.Type == QuestionType.Time)
+                {
+                    <!-- Дата и время -->
+                    <div class="date-time-results">
+                        @if (questionResult.TextAnswers != null && questionResult.TextAnswers.Any())
+                        {
+                            <div style="max-height: 400px; overflow-y: auto;">
+                            @foreach (var textAnswer in questionResult.TextAnswers)
+                            {
+                                <div style="padding: 12px; margin-bottom: 10px; background: #f5faf5; border-left: 3px solid #4caf50; border-radius: 6px;">
+                                    @textAnswer
+                                </div>
+                            }
+                            </div>
+                        }
+                        else
+                        {
+                            <p style="color: #5f6368; font-style: italic;">Нет ответов</p>
+                        }
+                    </div>
+                }
+                else if (questionResult.Type == QuestionType.FileUpload)
+                {
+                    <!-- Загрузка файлов -->
+                    <div class="file-upload-results">
+                        @if (questionResult.TextAnswers != null && questionResult.TextAnswers.Any())
+                        {
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
+                            @foreach (var filePath in questionResult.TextAnswers)
+                            {
+                                var fileName = System.IO.Path.GetFileName(filePath);
+                                <div style="padding: 15px; background: #f5faf5; border: 1px solid #4caf50; border-radius: 8px; text-align: center;">
+                                    <div style="font-size: 2rem; margin-bottom: 10px;">📎</div>
+                                    <div style="font-weight: 500; color: #1a1a1a; margin-bottom: 10px; word-break: break-word;">@fileName</div>
+                                    <a href="@filePath" target="_blank" style="color: #2e7d32; text-decoration: underline; font-size: 14px;">Скачать</a>
+                                </div>
+                            }
+                            </div>
+                        }
+                        else
+                        {
+                            <p style="color: #5f6368; font-style: italic;">Нет загруженных файлов</p>
                         }
                     </div>
                 }
@@ -231,6 +281,23 @@
     .export-btn:active {
         transform: translateY(0);
         box-shadow: 0 1px 3px rgba(46, 125, 50, 0.2) !important;
+    }
+    
+    /* Адаптивность для мобильных устройств */
+    @@media (max-width: 768px) {
+        .chart-container {
+            height: 300px !important;
+        }
+        
+        .question-result-card {
+            padding: 20px !important;
+        }
+        
+        .results-header {
+            padding: 20px !important;
+            flex-direction: column !important;
+            gap: 15px !important;
+        }
     }
 </style>
 
