@@ -510,6 +510,28 @@ namespace NovoyaHope.Controllers
                             .Count(a => a.SelectedOptionId == option.Id);
                     }
                 }
+                else if (question.Type == QuestionType.Rating)
+                {
+                    // Рейтинг - считаем среднее значение и распределение по опциям
+                    var ratingAnswers = answersForQuestion
+                        .Where(a => a.SelectedOptionId.HasValue)
+                        .Select(a => a.SelectedOption?.Order ?? 0)
+                        .Where(order => order > 0)
+                        .ToList();
+
+                    if (ratingAnswers.Any())
+                    {
+                        questionResult.AverageScore = ratingAnswers.Average();
+                    }
+
+                    // Показываем распределение по опциям (звездам/оценкам)
+                    foreach (var option in question.AnswerOptions ?? new List<AnswerOption>())
+                    {
+                        questionResult.OptionTexts[option.Id] = option.Text;
+                        questionResult.OptionCounts[option.Id] = answersForQuestion
+                            .Count(a => a.SelectedOptionId == option.Id);
+                    }
+                }
 
                 viewModel.QuestionResults.Add(questionResult);
             }

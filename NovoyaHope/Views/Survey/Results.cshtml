@@ -1,6 +1,7 @@
 @model NovoyaHope.Models.ViewModels.SurveyResultsViewModel
 @using NovoyaHope.Models
 @using System.Linq
+@using System.Text.Json
 
 @{
     ViewData["Title"] = "Ответы: " + Model.SurveyTitle;
@@ -83,6 +84,21 @@
                         @if (questionResult.OptionTexts != null && questionResult.OptionTexts.Any())
                         {
                             var totalVotes = questionResult.OptionCounts.Values.Sum();
+                            var labels = questionResult.OptionTexts.Select(o => o.Value).ToList();
+                            var values = questionResult.OptionTexts.Select(o => questionResult.OptionCounts.ContainsKey(o.Key) ? questionResult.OptionCounts[o.Key] : 0).ToList();
+                            var chartType = questionResult.Type == QuestionType.SingleChoice ? "pie" : "bar";
+                            
+                            <!-- График -->
+                            <div class="chart-container" style="margin-bottom: 30px; position: relative; height: 400px;">
+                                <div data-chart-type="@chartType" 
+                                     data-question-id="@questionResult.QuestionId"
+                                     data-labels='@Html.Raw(JsonSerializer.Serialize(labels))'
+                                     data-values='@Html.Raw(JsonSerializer.Serialize(values))'>
+                                    <canvas id="chart-@questionResult.QuestionId"></canvas>
+                                </div>
+                            </div>
+                            
+                            <!-- Текстовое представление -->
                             @foreach (var option in questionResult.OptionTexts)
                             {
                                 var count = questionResult.OptionCounts.ContainsKey(option.Key) ? questionResult.OptionCounts[option.Key] : 0;
@@ -112,8 +128,23 @@
                         
                         @if (questionResult.OptionTexts != null && questionResult.OptionTexts.Any())
                         {
+                            var orderedOptions = questionResult.OptionTexts.OrderBy(o => o.Value).ToList();
+                            var labels = orderedOptions.Select(o => o.Value).ToList();
+                            var values = orderedOptions.Select(o => questionResult.OptionCounts.ContainsKey(o.Key) ? questionResult.OptionCounts[o.Key] : 0).ToList();
                             var totalVotes = questionResult.OptionCounts.Values.Sum();
-                            @foreach (var option in questionResult.OptionTexts.OrderBy(o => o.Value))
+                            
+                            <!-- График -->
+                            <div class="chart-container" style="margin-bottom: 30px; position: relative; height: 400px;">
+                                <div data-chart-type="line" 
+                                     data-question-id="@questionResult.QuestionId"
+                                     data-labels='@Html.Raw(JsonSerializer.Serialize(labels))'
+                                     data-values='@Html.Raw(JsonSerializer.Serialize(values))'>
+                                    <canvas id="chart-@questionResult.QuestionId"></canvas>
+                                </div>
+                            </div>
+                            
+                            <!-- Текстовое представление -->
+                            @foreach (var option in orderedOptions)
                             {
                                 var count = questionResult.OptionCounts.ContainsKey(option.Key) ? questionResult.OptionCounts[option.Key] : 0;
                                 var percentage = totalVotes > 0 ? (count * 100.0 / totalVotes) : 0;
@@ -122,6 +153,51 @@
                                     <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
                                         <span style="font-weight: 500; color: #1a1a1a;">@option.Value</span>
                                         <span style="color: #2e7d32; font-weight: 600;">@count</span>
+                                    </div>
+                                    <div style="background: #e0e0e0; border-radius: 6px; height: 24px; overflow: hidden;">
+                                        <div style="background: linear-gradient(90deg, #4caf50 0%, #81c784 100%); height: 100%; width: @percentage%; transition: width 0.5s; border-radius: 6px;"></div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+                else if (questionResult.Type == QuestionType.Rating)
+                {
+                    <!-- Рейтинг -->
+                    <div class="rating-results">
+                        <div style="background: #f5faf5; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                            <div style="font-size: 2rem; color: #2e7d32; font-weight: 700;">@questionResult.AverageScore.ToString("F2")</div>
+                            <div style="color: #5f6368; margin-top: 5px;">Средняя оценка</div>
+                        </div>
+                        
+                        @if (questionResult.OptionTexts != null && questionResult.OptionTexts.Any())
+                        {
+                            var orderedOptions = questionResult.OptionTexts.OrderBy(o => o.Value).ToList();
+                            var labels = orderedOptions.Select(o => o.Value).ToList();
+                            var values = orderedOptions.Select(o => questionResult.OptionCounts.ContainsKey(o.Key) ? questionResult.OptionCounts[o.Key] : 0).ToList();
+                            var totalVotes = questionResult.OptionCounts.Values.Sum();
+                            
+                            <!-- График -->
+                            <div class="chart-container" style="margin-bottom: 30px; position: relative; height: 400px;">
+                                <div data-chart-type="bar-rating" 
+                                     data-question-id="@questionResult.QuestionId"
+                                     data-labels='@Html.Raw(JsonSerializer.Serialize(labels))'
+                                     data-values='@Html.Raw(JsonSerializer.Serialize(values))'>
+                                    <canvas id="chart-@questionResult.QuestionId"></canvas>
+                                </div>
+                            </div>
+                            
+                            <!-- Текстовое представление -->
+                            @foreach (var option in orderedOptions)
+                            {
+                                var count = questionResult.OptionCounts.ContainsKey(option.Key) ? questionResult.OptionCounts[option.Key] : 0;
+                                var percentage = totalVotes > 0 ? (count * 100.0 / totalVotes) : 0;
+                                
+                                <div style="margin-bottom: 15px;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                        <span style="font-weight: 500; color: #1a1a1a;">@option.Value</span>
+                                        <span style="color: #2e7d32; font-weight: 600;">@count (@percentage.ToString("F1"))%</span>
                                     </div>
                                     <div style="background: #e0e0e0; border-radius: 6px; height: 24px; overflow: hidden;">
                                         <div style="background: linear-gradient(90deg, #4caf50 0%, #81c784 100%); height: 100%; width: @percentage%; transition: width 0.5s; border-radius: 6px;"></div>
@@ -157,4 +233,10 @@
         box-shadow: 0 1px 3px rgba(46, 125, 50, 0.2) !important;
     }
 </style>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- Analytics Script -->
+<script src="~/js/analytics.js" asp-append-version="true"></script>
 
